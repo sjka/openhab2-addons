@@ -431,8 +431,12 @@ public abstract class KNXBridgeBaseThingHandler extends BaseThingHandler impleme
         if (gaStatusListener == null) {
             throw new NullPointerException("It's not allowed to pass a null GAStatusListener.");
         }
-        boolean result = gaStatusListeners.add(gaStatusListener);
-
+        boolean result = false;
+        if (gaStatusListeners.contains(gaStatusListener)) {
+            result = true;
+        } else {
+            result = gaStatusListeners.add(gaStatusListener);
+        }
         return result;
     }
 
