@@ -10,13 +10,10 @@ package org.openhab.binding.knx.handler;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
-import org.eclipse.smarthome.core.items.Item;
 import org.eclipse.smarthome.core.thing.Bridge;
-import org.eclipse.smarthome.core.thing.Channel;
 import org.eclipse.smarthome.core.thing.ChannelUID;
 import org.eclipse.smarthome.core.thing.Thing;
 import org.eclipse.smarthome.core.thing.ThingStatus;
@@ -27,7 +24,6 @@ import org.eclipse.smarthome.core.thing.link.ItemChannelLinkRegistry;
 import org.eclipse.smarthome.core.types.Command;
 import org.eclipse.smarthome.core.types.State;
 import org.eclipse.smarthome.core.types.Type;
-import org.openhab.binding.knx.KNXBindingConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -200,20 +196,20 @@ public abstract class KNXBaseThingHandler extends BaseThingHandler implements GA
 
     protected void updateStateAndIgnore(ChannelUID channelUID, State state) {
 
-        Set<Item> itemSet = this.getLinkedItems(channelUID.getId());
-
-        for (Item anItem : itemSet) {
-            logger.trace("The channel '{}' is bound to item '{}' ", channelUID, anItem);
-            for (ChannelUID cUID : itemChannelLinkRegistry.getBoundChannels(anItem.getName())) {
-                logger.trace("Item '{}' has a channel with id '{}'", anItem, cUID);
-                if (cUID.getBindingId().equals(KNXBindingConstants.BINDING_ID)
-                        && !cUID.toString().equals(channelUID.toString())) {
-                    logger.trace("Added event (channel='{}', type='{}') to the ignore event list", cUID,
-                            state.toString());
-                    ignoreEventList.add(cUID.toString() + state.toString());
-                }
-            }
-        }
+        // Set<Item> itemSet = this.getLinkedItems(channelUID.getId());
+        //
+        // for (Item anItem : itemSet) {
+        // logger.trace("The channel '{}' is bound to item '{}' ", channelUID, anItem);
+        // for (ChannelUID cUID : itemChannelLinkRegistry.getBoundChannels(anItem.getName())) {
+        // logger.trace("Item '{}' has a channel with id '{}'", anItem, cUID);
+        // if (cUID.getBindingId().equals(KNXBindingConstants.BINDING_ID)
+        // && !cUID.toString().equals(channelUID.toString())) {
+        // logger.trace("Added event (channel='{}', type='{}') to the ignore event list", cUID,
+        // state.toString());
+        // ignoreEventList.add(cUID.toString() + state.toString());
+        // }
+        // }
+        // }
 
         updateState(channelUID, state);
         logger.trace("Processed  event (channel='{}', value='{}')", channelUID, state.toString());
@@ -222,20 +218,20 @@ public abstract class KNXBaseThingHandler extends BaseThingHandler implements GA
 
     protected void sendCommandAndIgnore(ChannelUID channelUID, Command command) {
 
-        Set<Item> itemSet = this.getLinkedItems(channelUID.getId());
-
-        for (Item anItem : itemSet) {
-            logger.trace("The channel '{}' is bound to item '{}' ", channelUID, anItem);
-            for (ChannelUID cUID : itemChannelLinkRegistry.getBoundChannels(anItem.getName())) {
-                logger.trace("Item '{}' has a channel with id '{}'", anItem, cUID);
-                if (cUID.getBindingId().equals(KNXBindingConstants.BINDING_ID)
-                        && !cUID.toString().equals(channelUID.toString())) {
-                    logger.trace("Added event (channel='{}', type='{}') to the ignore event list", cUID,
-                            command.toString());
-                    ignoreEventList.add(cUID.toString() + command.toString());
-                }
-            }
-        }
+        // Set<Item> itemSet = this.getLinkedItems(channelUID.getId());
+        //
+        // for (Item anItem : itemSet) {
+        // logger.trace("The channel '{}' is bound to item '{}' ", channelUID, anItem);
+        // for (ChannelUID cUID : itemChannelLinkRegistry.getBoundChannels(anItem.getName())) {
+        // logger.trace("Item '{}' has a channel with id '{}'", anItem, cUID);
+        // if (cUID.getBindingId().equals(KNXBindingConstants.BINDING_ID)
+        // && !cUID.toString().equals(channelUID.toString())) {
+        // logger.trace("Added event (channel='{}', type='{}') to the ignore event list", cUID,
+        // command.toString());
+        // ignoreEventList.add(cUID.toString() + command.toString());
+        // }
+        // }
+        // }
 
         updateState(channelUID, (State) command);
         logger.trace("Processed  event (channel='{}', value='{}')", channelUID, command.toString());
@@ -307,12 +303,12 @@ public abstract class KNXBaseThingHandler extends BaseThingHandler implements GA
 
     abstract void initializeReadAddresses();
 
-    protected Set<Item> getLinkedItems(String channelId) {
-        Channel channel = getThing().getChannel(channelId);
-        if (channel != null) {
-            return channel.getLinkedItems();
-        } else {
-            throw new IllegalArgumentException("Channel with ID '" + channelId + "' does not exists.");
-        }
-    }
+    // protected Set<Item> getLinkedItems(String channelId) {
+    // Channel channel = getThing().getChannel(channelId);
+    // if (channel != null) {
+    // return channel.getLinkedItems();
+    // } else {
+    // throw new IllegalArgumentException("Channel with ID '" + channelId + "' does not exists.");
+    // }
+    // }
 }

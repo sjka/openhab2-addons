@@ -13,6 +13,7 @@ import org.eclipse.smarthome.core.thing.ChannelUID;
 import org.eclipse.smarthome.core.thing.Thing;
 import org.eclipse.smarthome.core.thing.link.ItemChannelLinkRegistry;
 import org.eclipse.smarthome.core.types.Type;
+
 import tuwien.auto.calimero.GroupAddress;
 
 /**
@@ -20,7 +21,7 @@ import tuwien.auto.calimero.GroupAddress;
  * sent to one of the channels. It implements a KNX roller/shutter/blind actor that
  * is also capable of handling ON and OFF commands, that get translated in a 100% and
  * 0% position
- * 
+ *
  * @author Karel Goderis - Initial contribution
  */
 public class RollerShutterSwitchThingHandler extends RollerShutterThingHandler {
@@ -34,7 +35,7 @@ public class RollerShutterSwitchThingHandler extends RollerShutterThingHandler {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see org.openhab.binding.knx.handler.KNXBaseThingHandler#processDataReceived(tuwien.auto.calimero.GroupAddress,
      * org.eclipse.smarthome.core.types.Type)
      */
@@ -47,10 +48,16 @@ public class RollerShutterSwitchThingHandler extends RollerShutterThingHandler {
             try {
                 GroupAddress address = new GroupAddress((String) getConfig().get(POSITION_STATUS_GA));
                 if (address.equals(destination)) {
-                    if ( ((PercentType)state).intValue() == 100)
-                        updateStateAndIgnore(new ChannelUID(getThing().getUID(), CHANNEL_SWITCH), OnOffType.ON);
-                    if (((PercentType)state).intValue() == 0)
-                        updateStateAndIgnore(new ChannelUID(getThing().getUID(), CHANNEL_SWITCH), OnOffType.OFF);
+                    if (((PercentType) state).intValue() == 100) {
+                        updateStateAndIgnore(
+                                new ChannelUID(getThing().getThingTypeUID(), getThing().getUID(), CHANNEL_SWITCH),
+                                OnOffType.ON);
+                    }
+                    if (((PercentType) state).intValue() == 0) {
+                        updateStateAndIgnore(
+                                new ChannelUID(getThing().getThingTypeUID(), getThing().getUID(), CHANNEL_SWITCH),
+                                OnOffType.OFF);
+                    }
                 }
             } catch (Exception e) {
                 // do nothing, we move on (either config parameter null, or wrong address format)
@@ -69,11 +76,13 @@ public class RollerShutterSwitchThingHandler extends RollerShutterThingHandler {
 
             PercentType newCommand = null;
 
-            if (command == OnOffType.ON)
+            if (command == OnOffType.ON) {
                 newCommand = new PercentType(100);
+            }
 
-            if (command == OnOffType.OFF)
+            if (command == OnOffType.OFF) {
                 newCommand = new PercentType(0);
+            }
 
             return super.getDPT(channelUID, newCommand);
         }
@@ -96,11 +105,13 @@ public class RollerShutterSwitchThingHandler extends RollerShutterThingHandler {
 
         if (command instanceof OnOffType) {
             PercentType newCommand = null;
-            if (command == OnOffType.ON)
+            if (command == OnOffType.ON) {
                 newCommand = new PercentType(100);
+            }
 
-            if (command == OnOffType.OFF)
+            if (command == OnOffType.OFF) {
                 newCommand = new PercentType(0);
+            }
 
             return newCommand;
         }
