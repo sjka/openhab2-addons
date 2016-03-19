@@ -168,31 +168,31 @@ public abstract class KNXBaseThingHandler extends BaseThingHandler implements GA
         bridge.writeToKNX(address, dpt, type);
     }
 
-    @Override
-    public void handleUpdate(ChannelUID channelUID, State state) {
-
-        KNXBridgeBaseThingHandler bridge = (KNXBridgeBaseThingHandler) getBridge().getHandler();
-
-        if (bridge == null) {
-            logger.warn("KNX bridge handler not found. Cannot handle an update without bridge.");
-            return;
-        }
-
-        String ignoreEventListKey = channelUID.toString() + state.toString();
-        if (ignoreEventList.contains(ignoreEventListKey)) {
-            ignoreEventList.remove(ignoreEventListKey);
-            logger.debug(
-                    "We received this event (channel='{}', state='{}') from KNX, so we don't send it back again -> ignore!",
-                    channelUID, state.toString());
-            return;
-        }
-
-        String dpt = getDPT(channelUID, state);
-        String address = getAddress(channelUID, state);
-        Type type = getType(channelUID, state);
-
-        bridge.writeToKNX(address, dpt, type);
-    }
+    // @Override
+    // public void handleUpdate(ChannelUID channelUID, State state) {
+    //
+    // KNXBridgeBaseThingHandler bridge = (KNXBridgeBaseThingHandler) getBridge().getHandler();
+    //
+    // if (bridge == null) {
+    // logger.warn("KNX bridge handler not found. Cannot handle an update without bridge.");
+    // return;
+    // }
+    //
+    // String ignoreEventListKey = channelUID.toString() + state.toString();
+    // if (ignoreEventList.contains(ignoreEventListKey)) {
+    // ignoreEventList.remove(ignoreEventListKey);
+    // logger.debug(
+    // "We received this event (channel='{}', state='{}') from KNX, so we don't send it back again -> ignore!",
+    // channelUID, state.toString());
+    // return;
+    // }
+    //
+    // String dpt = getDPT(channelUID, state);
+    // String address = getAddress(channelUID, state);
+    // Type type = getType(channelUID, state);
+    //
+    // bridge.writeToKNX(address, dpt, type);
+    // }
 
     protected void updateStateAndIgnore(ChannelUID channelUID, State state) {
 
