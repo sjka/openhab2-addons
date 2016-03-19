@@ -498,25 +498,25 @@ public abstract class KNXBridgeBaseThingHandler extends BaseThingHandler impleme
 
     }
 
-    @Override
-    public void handleUpdate(ChannelUID channelUID, State newState) {
-
-        if (channelUID != null) {
-            Channel channel = this.getThing().getChannel(channelUID.getId());
-            if (channel != null) {
-                Configuration channelConfiguration = channel.getConfiguration();
-                //
-                // if (ignoreEventList.contains(channelUID.toString() + newState.toString())) {
-                // logger.trace("Ooops... this event should be ignored");
-                // ignoreEventList.remove(channelUID.toString() + newState.toString());
-                // } else {
-                this.writeToKNX((String) channelConfiguration.get(ADDRESS), (String) channelConfiguration.get(DPT),
-                        newState);
-                // }
-            }
-        }
-
-    }
+    // @Override
+    // public void handleUpdate(ChannelUID channelUID, State newState) {
+    //
+    // if (channelUID != null) {
+    // Channel channel = this.getThing().getChannel(channelUID.getId());
+    // if (channel != null) {
+    // Configuration channelConfiguration = channel.getConfiguration();
+    // //
+    // // if (ignoreEventList.contains(channelUID.toString() + newState.toString())) {
+    // // logger.trace("Ooops... this event should be ignored");
+    // // ignoreEventList.remove(channelUID.toString() + newState.toString());
+    // // } else {
+    // this.writeToKNX((String) channelConfiguration.get(ADDRESS), (String) channelConfiguration.get(DPT),
+    // newState);
+    // // }
+    // }
+    // }
+    //
+    // }
 
     public class BusRunnable implements Runnable {
 
