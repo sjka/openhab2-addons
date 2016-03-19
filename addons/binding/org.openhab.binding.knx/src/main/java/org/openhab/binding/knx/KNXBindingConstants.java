@@ -23,6 +23,11 @@ public class KNXBindingConstants {
      */
     public static final String DEFAULT_MULTICAST_IP = "224.0.23.12";
 
+    /**
+     * The group address for identification of this KNX/IP gateway within the KNX bus. Default is 0.0.0
+     */
+    public static final String DEFAULT_KNX_GROUP_ADDRESS = "0.0.0";
+
     public static final String BINDING_ID = "knx";
 
     // List of all Thing Type UIDs

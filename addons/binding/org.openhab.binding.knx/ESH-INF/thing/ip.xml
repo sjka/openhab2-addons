@@ -32,8 +32,13 @@
             </parameter>      
             <parameter name="ipConnectionType" type="text">
                 <label>IP Connection Type</label>
-                <description>The ip connection type for connecting to the KNX bus. Could be either TUNNEL or ROUTING</description>
+                <description>The ip connection type for connecting to the KNX bus. Could be either TUNNEL or ROUTER</description>
                 <required>true</required>
+            </parameter>  
+            <parameter name="localSourceAddr" type="text">
+                <label>local KNX GA</label>
+                <description>The group address for identification of this KNX/IP gateway within the KNX bus. Default is 0.0.0</description>
+                <required>false</required>
             </parameter>
             <parameter name="readingPause" type="integer">
                 <label>Reading Pause</label>
