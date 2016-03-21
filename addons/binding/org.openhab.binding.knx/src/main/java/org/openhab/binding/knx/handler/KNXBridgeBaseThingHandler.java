@@ -213,15 +213,15 @@ public abstract class KNXBridgeBaseThingHandler extends BaseThingHandler impleme
 
                     if (intervalTimestamp == 0) {
                         intervalTimestamp = System.currentTimeMillis();
-                        updateState(new ChannelUID(getThing().getThingTypeUID(), getThing().getUID(),
-                                KNXBindingConstants.ERRORS_STARTUP), new DecimalType(errorsSinceStart));
-                        updateState(new ChannelUID(getThing().getThingTypeUID(), getThing().getUID(),
-                                KNXBindingConstants.ERRORS_INTERVAL), new DecimalType(errorsSinceInterval));
+                        updateState(new ChannelUID(getThing().getUID(), KNXBindingConstants.ERRORS_STARTUP),
+                                new DecimalType(errorsSinceStart));
+                        updateState(new ChannelUID(getThing().getUID(), KNXBindingConstants.ERRORS_INTERVAL),
+                                new DecimalType(errorsSinceInterval));
                     } else if ((System.currentTimeMillis() - intervalTimestamp) > 60 * 1000 * ERROR_INTERVAL_MINUTES) {
                         intervalTimestamp = System.currentTimeMillis();
                         errorsSinceInterval = 0;
-                        updateState(new ChannelUID(getThing().getThingTypeUID(), getThing().getUID(),
-                                KNXBindingConstants.ERRORS_INTERVAL), new DecimalType(errorsSinceInterval));
+                        updateState(new ChannelUID(getThing().getUID(), KNXBindingConstants.ERRORS_INTERVAL),
+                                new DecimalType(errorsSinceInterval));
                     }
 
                     int messageCode = e.getFrame().getMessageCode();
@@ -233,11 +233,9 @@ public abstract class KNXBridgeBaseThingHandler extends BaseThingHandler impleme
                                 errorsSinceStart++;
                                 errorsSinceInterval++;
 
-                                updateState(new ChannelUID(getThing().getThingTypeUID(), getThing().getUID(),
-                                        KNXBindingConstants.ERRORS_STARTUP), new DecimalType(errorsSinceStart));
-                                updateState(
-                                        new ChannelUID(getThing().getThingTypeUID(), getThing().getUID(),
-                                                KNXBindingConstants.ERRORS_INTERVAL),
+                                updateState(new ChannelUID(getThing().getUID(), KNXBindingConstants.ERRORS_STARTUP),
+                                        new DecimalType(errorsSinceStart));
+                                updateState(new ChannelUID(getThing().getUID(), KNXBindingConstants.ERRORS_INTERVAL),
                                         new DecimalType(errorsSinceInterval));
 
                             }
@@ -251,15 +249,15 @@ public abstract class KNXBridgeBaseThingHandler extends BaseThingHandler impleme
 
                     if (intervalTimestamp == 0) {
                         intervalTimestamp = System.currentTimeMillis();
-                        updateState(new ChannelUID(getThing().getThingTypeUID(), getThing().getUID(),
-                                KNXBindingConstants.ERRORS_STARTUP), new DecimalType(errorsSinceStart));
-                        updateState(new ChannelUID(getThing().getThingTypeUID(), getThing().getUID(),
-                                KNXBindingConstants.ERRORS_INTERVAL), new DecimalType(errorsSinceInterval));
+                        updateState(new ChannelUID(getThing().getUID(), KNXBindingConstants.ERRORS_STARTUP),
+                                new DecimalType(errorsSinceStart));
+                        updateState(new ChannelUID(getThing().getUID(), KNXBindingConstants.ERRORS_INTERVAL),
+                                new DecimalType(errorsSinceInterval));
                     } else if ((System.currentTimeMillis() - intervalTimestamp) > 60 * 1000 * ERROR_INTERVAL_MINUTES) {
                         intervalTimestamp = System.currentTimeMillis();
                         errorsSinceInterval = 0;
-                        updateState(new ChannelUID(getThing().getThingTypeUID(), getThing().getUID(),
-                                KNXBindingConstants.ERRORS_INTERVAL), new DecimalType(errorsSinceInterval));
+                        updateState(new ChannelUID(getThing().getUID(), KNXBindingConstants.ERRORS_INTERVAL),
+                                new DecimalType(errorsSinceInterval));
                     }
 
                     int messageCode = e.getFrame().getMessageCode();
@@ -270,11 +268,9 @@ public abstract class KNXBridgeBaseThingHandler extends BaseThingHandler impleme
                                 errorsSinceStart++;
                                 errorsSinceInterval++;
 
-                                updateState(new ChannelUID(getThing().getThingTypeUID(), getThing().getUID(),
-                                        KNXBindingConstants.ERRORS_STARTUP), new DecimalType(errorsSinceStart));
-                                updateState(
-                                        new ChannelUID(getThing().getThingTypeUID(), getThing().getUID(),
-                                                KNXBindingConstants.ERRORS_INTERVAL),
+                                updateState(new ChannelUID(getThing().getUID(), KNXBindingConstants.ERRORS_STARTUP),
+                                        new DecimalType(errorsSinceStart));
+                                updateState(new ChannelUID(getThing().getUID(), KNXBindingConstants.ERRORS_INTERVAL),
                                         new DecimalType(errorsSinceInterval));
                             }
                             break;

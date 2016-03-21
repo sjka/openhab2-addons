@@ -49,14 +49,10 @@ public class RollerShutterSwitchThingHandler extends RollerShutterThingHandler {
                 GroupAddress address = new GroupAddress((String) getConfig().get(POSITION_STATUS_GA));
                 if (address.equals(destination)) {
                     if (((PercentType) state).intValue() == 100) {
-                        updateStateAndIgnore(
-                                new ChannelUID(getThing().getThingTypeUID(), getThing().getUID(), CHANNEL_SWITCH),
-                                OnOffType.ON);
+                        updateStateAndIgnore(new ChannelUID(getThing().getUID(), CHANNEL_SWITCH), OnOffType.ON);
                     }
                     if (((PercentType) state).intValue() == 0) {
-                        updateStateAndIgnore(
-                                new ChannelUID(getThing().getThingTypeUID(), getThing().getUID(), CHANNEL_SWITCH),
-                                OnOffType.OFF);
+                        updateStateAndIgnore(new ChannelUID(getThing().getUID(), CHANNEL_SWITCH), OnOffType.OFF);
                     }
                 }
             } catch (Exception e) {

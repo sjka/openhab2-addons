@@ -38,7 +38,7 @@ public class DimmerThingHandler extends KNXBaseThingHandler {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see org.openhab.binding.knx.handler.GAStatusListener#listensTo(tuwien.auto.calimero.GroupAddress)
      */
     @Override
@@ -99,7 +99,7 @@ public class DimmerThingHandler extends KNXBaseThingHandler {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see org.openhab.binding.knx.handler.KNXBaseThingHandler#processDataReceived(tuwien.auto.calimero.GroupAddress,
      * org.eclipse.smarthome.core.types.Type)
      */
@@ -109,8 +109,7 @@ public class DimmerThingHandler extends KNXBaseThingHandler {
         try {
             GroupAddress address = new GroupAddress((String) getConfig().get(STATUS_GA));
             if (address.equals(destination)) {
-                updateStateAndIgnore(new ChannelUID(getThing().getThingTypeUID(), getThing().getUID(), CHANNEL_DIMMER),
-                        (State) state);
+                updateStateAndIgnore(new ChannelUID(getThing().getUID(), CHANNEL_DIMMER), (State) state);
             }
         } catch (Exception e) {
             // do nothing, we move on (either config parameter null, or wrong address format)
@@ -119,8 +118,7 @@ public class DimmerThingHandler extends KNXBaseThingHandler {
         try {
             GroupAddress address = new GroupAddress((String) getConfig().get(DIM_VALUE_GA));
             if (address.equals(destination)) {
-                updateStateAndIgnore(new ChannelUID(getThing().getThingTypeUID(), getThing().getUID(), CHANNEL_DIMMER),
-                        (State) state);
+                updateStateAndIgnore(new ChannelUID(getThing().getUID(), CHANNEL_DIMMER), (State) state);
             }
         } catch (Exception e) {
             // do nothing, we move on (either config parameter null, or wrong address format)
@@ -130,7 +128,7 @@ public class DimmerThingHandler extends KNXBaseThingHandler {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see org.openhab.binding.knx.handler.KNXBaseThingHandler#getDPT(tuwien.auto.calimero.GroupAddress)
      */
     @Override
@@ -191,7 +189,7 @@ public class DimmerThingHandler extends KNXBaseThingHandler {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see org.openhab.binding.knx.handler.KNXBaseThingHandler#intializeDatapoints()
      */
     @Override

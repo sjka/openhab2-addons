@@ -35,7 +35,7 @@ public class GAThingHandler extends KNXBaseThingHandler {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see org.openhab.binding.knx.handler.GAStatusListener#listensTo(tuwien.auto.calimero.GroupAddress)
      */
     @Override
@@ -56,20 +56,19 @@ public class GAThingHandler extends KNXBaseThingHandler {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see org.openhab.binding.knx.handler.KNXBaseThingHandler#processDataReceived(tuwien.auto.calimero.GroupAddress,
      * org.eclipse.smarthome.core.types.Type)
      */
     @Override
     void processDataReceived(GroupAddress destination, Type state) {
         State newState = new StringType(state.toString());
-        updateStateAndIgnore(new ChannelUID(getThing().getThingTypeUID(), getThing().getUID(), CHANNEL_STRING),
-                newState);
+        updateStateAndIgnore(new ChannelUID(getThing().getUID(), CHANNEL_STRING), newState);
     }
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see org.openhab.binding.knx.handler.KNXBaseThingHandler#getDPT(tuwien.auto.calimero.GroupAddress)
      */
     @Override
@@ -79,7 +78,7 @@ public class GAThingHandler extends KNXBaseThingHandler {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see org.openhab.binding.knx.handler.KNXBaseThingHandler#intializeDatapoints()
      */
     @Override

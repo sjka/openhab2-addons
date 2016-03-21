@@ -16,7 +16,6 @@ Import-Package: com.google.common.collect,
  org.eclipse.smarthome.core.thing.binding.builder,
  org.eclipse.smarthome.core.thing.link,
  org.eclipse.smarthome.core.types,
- org.openhab.core.types,
  org.osgi.framework;version="1.8.0",
  org.slf4j
 Service-Component: OSGI-INF/IPBridgeThingHandler.xml, OSGI-INF/KNXCoreTypeMapper.xml, OSGI-INF/KNXHandlerFactory.xml, OSGI-INF/SerialBridgeThingHandler.xml

@@ -47,7 +47,7 @@ public class RollerShutterThingHandler extends KNXBaseThingHandler {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see org.openhab.binding.knx.handler.GAStatusListener#listensTo(tuwien.auto.calimero.GroupAddress)
      */
     @Override
@@ -121,7 +121,7 @@ public class RollerShutterThingHandler extends KNXBaseThingHandler {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see org.openhab.binding.knx.handler.KNXBaseThingHandler#processDataReceived(tuwien.auto.calimero.GroupAddress,
      * org.eclipse.smarthome.core.types.Type)
      */
@@ -135,9 +135,7 @@ public class RollerShutterThingHandler extends KNXBaseThingHandler {
         try {
             GroupAddress address = new GroupAddress((String) getConfig().get(POSITION_STATUS_GA));
             if (address.equals(destination)) {
-                updateStateAndIgnore(
-                        new ChannelUID(getThing().getThingTypeUID(), getThing().getUID(), CHANNEL_ROLLERSHUTTER),
-                        (State) state);
+                updateStateAndIgnore(new ChannelUID(getThing().getUID(), CHANNEL_ROLLERSHUTTER), (State) state);
             }
         } catch (Exception e) {
             // do nothing, we move on (either config parameter null, or wrong address format)
@@ -146,9 +144,7 @@ public class RollerShutterThingHandler extends KNXBaseThingHandler {
         try {
             GroupAddress address = new GroupAddress((String) getConfig().get(STOP_MOVE_STATUS_GA));
             if (address.equals(destination)) {
-                updateStateAndIgnore(
-                        new ChannelUID(getThing().getThingTypeUID(), getThing().getUID(), CHANNEL_ROLLERSHUTTER),
-                        (State) state);
+                updateStateAndIgnore(new ChannelUID(getThing().getUID(), CHANNEL_ROLLERSHUTTER), (State) state);
             }
         } catch (Exception e) {
             // do nothing, we move on (either config parameter null, or wrong address format)
@@ -157,9 +153,7 @@ public class RollerShutterThingHandler extends KNXBaseThingHandler {
         try {
             GroupAddress address = new GroupAddress((String) getConfig().get(UP_DOWN_STATUS_GA));
             if (address.equals(destination)) {
-                updateStateAndIgnore(
-                        new ChannelUID(getThing().getThingTypeUID(), getThing().getUID(), CHANNEL_ROLLERSHUTTER),
-                        (State) state);
+                updateStateAndIgnore(new ChannelUID(getThing().getUID(), CHANNEL_ROLLERSHUTTER), (State) state);
             }
         } catch (Exception e) {
             // do nothing, we move on (either config parameter null, or wrong address format)
@@ -169,7 +163,7 @@ public class RollerShutterThingHandler extends KNXBaseThingHandler {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see org.openhab.binding.knx.handler.KNXBaseThingHandler#getDPT(tuwien.auto.calimero.GroupAddress)
      */
     @Override
@@ -243,7 +237,7 @@ public class RollerShutterThingHandler extends KNXBaseThingHandler {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see org.openhab.binding.knx.handler.KNXBaseThingHandler#intializeDatapoints()
      */
     @Override
