@@ -14,7 +14,6 @@ import org.slf4j.LoggerFactory;
 
 import tuwien.auto.calimero.IndividualAddress;
 import tuwien.auto.calimero.exception.KNXException;
-import tuwien.auto.calimero.link.KNXNetworkLink;
 import tuwien.auto.calimero.link.KNXNetworkLinkIP;
 import tuwien.auto.calimero.link.medium.TPSettings;
 
@@ -85,7 +84,7 @@ public class IPBridgeThingHandler extends KNXBridgeBaseThingHandler {
     }
 
     @Override
-    public KNXNetworkLink establishConnection() throws KNXException {
+    public void establishConnection() throws KNXException {
 
         try {
             InetSocketAddress localEndPoint = null;
@@ -109,7 +108,7 @@ public class IPBridgeThingHandler extends KNXBridgeBaseThingHandler {
                 }
             }
 
-            KNXNetworkLinkIP link = new KNXNetworkLinkIP(ipConnectionType, localEndPoint,
+            link = new KNXNetworkLinkIP(ipConnectionType, localEndPoint,
                     new InetSocketAddress(ip, ((BigDecimal) getConfig().get(PORT_NUMBER)).intValue()), false,
                     new TPSettings(new IndividualAddress((String) getConfig().get(KNX_GROUP_ADDRESS)), true));
 
@@ -119,8 +118,6 @@ public class IPBridgeThingHandler extends KNXBridgeBaseThingHandler {
                     "Connection to KNX bus on " + ip + ":" + ((BigDecimal) getConfig().get(PORT_NUMBER)).intValue()
                             + " in mode " + (String) getConfig().get(IP_CONNECTION_TYPE) + " could not be established");
         }
-
-        return link;
 
     }
 }

@@ -53,7 +53,7 @@ import tuwien.auto.calimero.log.LogManager;
 import tuwien.auto.calimero.process.ProcessCommunicator;
 import tuwien.auto.calimero.process.ProcessCommunicatorImpl;
 import tuwien.auto.calimero.process.ProcessEvent;
-import tuwien.auto.calimero.process.ProcessListener;
+import tuwien.auto.calimero.process.ProcessListenerEx;
 
 /**
  * The {@link KNXBridgeBaseThingHandler} is responsible for handling commands, which are
@@ -61,7 +61,7 @@ import tuwien.auto.calimero.process.ProcessListener;
  *
  * @author Kai Kreuzer / Karel Goderis - Initial contribution
  */
-public abstract class KNXBridgeBaseThingHandler extends BaseThingHandler implements ProcessListener, GAStatusListener {
+public abstract class KNXBridgeBaseThingHandler extends BaseThingHandler implements GAStatusListener {
 
     // List of all Configuration parameters
     public static final String AUTO_RECONNECT_PERIOD = "autoReconnectPeriod";
@@ -96,6 +96,7 @@ public abstract class KNXBridgeBaseThingHandler extends BaseThingHandler impleme
 
     protected ItemChannelLinkRegistry itemChannelLinkRegistry;
     private ProcessCommunicator pc = null;
+    private ProcessListenerEx pl = null;
     private final LogAdapter logAdapter = new LogAdapter();
     protected KNXNetworkLink link;
     private ScheduledFuture<?> reconnectJob;
@@ -164,13 +165,11 @@ public abstract class KNXBridgeBaseThingHandler extends BaseThingHandler impleme
         return ((BigDecimal) getConfig().get(READ_RETRIES_LIMIT)).intValue();
     }
 
-    public abstract KNXNetworkLink establishConnection() throws KNXException;
+    public abstract void establishConnection() throws KNXException;
 
     public synchronized void connect() {
         try {
             shutdown = false;
-
-            link = establishConnection();
 
             NetworkLinkListener linkListener = new NetworkLinkListener() {
                 @Override
@@ -285,16 +284,52 @@ public abstract class KNXBridgeBaseThingHandler extends BaseThingHandler impleme
                 }
             };
 
-            link.addLinkListener(linkListener);
+            if (link != null && link.isOpen()) {
+                link.close();
+            }
+
+            establishConnection();
+
+            if (link != null) {
+                link.addLinkListener(linkListener);
+            }
 
             if (pc != null) {
-                pc.removeProcessListener(this);
+                if (pl != null) {
+                    pc.removeProcessListener(pl);
+                }
                 pc.detach();
             }
 
+            pl = new ProcessListenerEx() {
+
+                @Override
+                public void detached(DetachEvent e) {
+                    logger.error("Received detach Event");
+                }
+
+                @Override
+                public void groupWrite(ProcessEvent e) {
+                    logger.debug("Received a GroupWrite from '{}'", e.getSourceAddr());
+                    readFromKNX(e);
+                }
+
+                @Override
+                public void groupReadRequest(ProcessEvent e) {
+                    logger.debug("Received a GroupReadRequest from '{}'", e.getSourceAddr());
+                }
+
+                @Override
+                public void groupReadResponse(ProcessEvent e) {
+                    logger.debug("Received a GroupReadResponse from '{}'", e.getSourceAddr());
+                    readFromKNX(e);
+                }
+
+            };
+
             pc = new ProcessCommunicatorImpl(link);
             pc.setResponseTimeout(((BigDecimal) getConfig().get(RESPONSE_TIME_OUT)).intValue() / 1000);
-            pc.addProcessListener(this);
+            pc.addProcessListener(pl);
 
             onConnectionResumed();
 
@@ -321,8 +356,10 @@ public abstract class KNXBridgeBaseThingHandler extends BaseThingHandler impleme
         }
 
         if (pc != null) {
+            if (pl != null) {
+                pc.removeProcessListener(pl);
+            }
             pc.detach();
-            pc.removeProcessListener(this);
         }
 
         if (link != null) {
@@ -619,22 +656,6 @@ public abstract class KNXBridgeBaseThingHandler extends BaseThingHandler impleme
                 readDatapoints.add(retryDatapoint);
             }
         }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void groupWrite(ProcessEvent e) {
-        readFromKNX(e);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void detached(DetachEvent e) {
-        logger.error("Received detach Event.");
     }
 
     /**
