@@ -129,10 +129,15 @@ public abstract class KNXBridgeBaseThingHandler extends BaseThingHandler impleme
     @Override
     public void dispose() {
 
+        if (reconnectJob != null) {
+            reconnectJob.cancel(true);
+        }
+
+        disconnect();
+
         // unregister ourselves as a Group Address Status Listener
         unregisterGAStatusListener(this);
 
-        disconnect();
         LogManager.getManager().removeWriter(null, logAdapter);
     }
 
@@ -293,45 +298,42 @@ public abstract class KNXBridgeBaseThingHandler extends BaseThingHandler impleme
 
             onConnectionResumed();
 
-        } catch (
-
-        KNXException e)
-
-        {
+        } catch (KNXException e) {
             logger.error("Error connecting to KNX bus: {}", e.getMessage());
+            disconnect();
         }
 
     }
 
     public synchronized void disconnect() {
         shutdown = true;
-        if (pc != null) {
-            KNXNetworkLink link = pc.detach();
-            pc.removeProcessListener(this);
 
-            if (reconnectJob != null) {
-                reconnectJob.cancel(true);
-            }
-
-            if (busJob != null) {
-                busJob.cancel(true);
-            }
-
-            if (link != null) {
-                logger.info("Closing KNX connection");
-                link.close();
-            }
-
+        if (readJobs != null) {
             for (ScheduledFuture<?> readJob : readJobs) {
                 if (!readJob.isDone()) {
                     readJob.cancel(true);
                 }
             }
         }
+
+        if (busJob != null) {
+            busJob.cancel(true);
+        }
+
+        if (pc != null) {
+            pc.detach();
+            pc.removeProcessListener(this);
+        }
+
+        if (link != null) {
+            logger.info("Closing KNX connection");
+            link.close();
+        }
+
+        onConnectionLost();
     }
 
     public void onConnectionLost() {
-        logger.debug("Updating thing status to OFFLINE.");
         updateStatus(ThingStatus.OFFLINE);
 
         for (GAStatusListener listener : gaStatusListeners) {

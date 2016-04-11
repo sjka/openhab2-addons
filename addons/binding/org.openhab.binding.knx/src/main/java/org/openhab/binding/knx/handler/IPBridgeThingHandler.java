@@ -74,7 +74,8 @@ public class IPBridgeThingHandler extends KNXBridgeBaseThingHandler {
                     ga = KNXBindingConstants.DEFAULT_KNX_GROUP_ADDRESS;
                 }
             } else {
-				logger.warn("unknown IP connection type '" + connectionTypeString + "'! Known types are either 'TUNNEL' or 'ROUTER'");
+                logger.warn("unknown IP connection type '" + connectionTypeString
+                        + "'! Known types are either 'TUNNEL' or 'ROUTER'");
             }
         } else {
             ipConnectionType = KNXNetworkLinkIP.TUNNELING;
@@ -95,30 +96,31 @@ public class IPBridgeThingHandler extends KNXBridgeBaseThingHandler {
                     InetAddress localHost = InetAddress.getLocalHost();
                     localEndPoint = new InetSocketAddress(localHost, 0);
                 } catch (UnknownHostException uhe) {
-					logger.warn("Couldn't find an IP address for this host. Please check the .hosts configuration or use the 'localIp' parameter to configure a valid IP address.");
+                    logger.warn(
+                            "Couldn't find an IP address for this host. Please check the .hosts configuration or use the 'localIp' parameter to configure a valid IP address.");
                 }
             }
 
             if (logger.isInfoEnabled()) {
                 if (link instanceof KNXNetworkLinkIP) {
-					String ipConnectionTypeString = 
-							ipConnectionType == KNXNetworkLinkIP.ROUTING ? "ROUTER" : "TUNNEL";
-					logger.info("Establishing connection to KNX bus on {} in mode {}.", ip + ":" + ((BigDecimal)getConfig().get(PORT_NUMBER)).intValue(), ipConnectionTypeString);
+                    String ipConnectionTypeString = ipConnectionType == KNXNetworkLinkIP.ROUTING ? "ROUTER" : "TUNNEL";
+                    logger.info("Establishing connection to KNX bus on {} in mode {}.",
+                            ip + ":" + ((BigDecimal) getConfig().get(PORT_NUMBER)).intValue(), ipConnectionTypeString);
                 }
             }
 
-            return new KNXNetworkLinkIP(ipConnectionType, localEndPoint,
+            KNXNetworkLinkIP link = new KNXNetworkLinkIP(ipConnectionType, localEndPoint,
                     new InetSocketAddress(ip, ((BigDecimal) getConfig().get(PORT_NUMBER)).intValue()), false,
                     new TPSettings(new IndividualAddress((String) getConfig().get(KNX_GROUP_ADDRESS)), true));
 
-        } catch (InterruptedException e) {
+        } catch (Exception e) {
             logger.error("Error connecting to KNX bus: {}", e.getMessage());
-        } catch (NumberFormatException e) {
-            logger.error("Error connecting to KNX bus: {}", e.getMessage());
-        } catch (KNXException e) {
-            logger.error("Error connecting to KNX bus: {}", e.getMessage());
+            throw new KNXException(
+                    "Connection to KNX bus on " + ip + ":" + ((BigDecimal) getConfig().get(PORT_NUMBER)).intValue()
+                            + " in mode " + (String) getConfig().get(IP_CONNECTION_TYPE) + " could not be established");
         }
 
-		throw new KNXException("Connection to KNX bus on "+ip+":"+((BigDecimal)getConfig().get(PORT_NUMBER)).intValue()+" in mode "+(String)getConfig().get(IP_CONNECTION_TYPE)+" could not be established" );
+        return link;
+
     }
 }
