@@ -10,8 +10,8 @@
         <description>This Bridge is for IP based KNX gateways</description>
         
         <channels>
-                        <channel id="errorsall" typeId="errors" />
-                        <channel id="errors5min" typeId="errors" />
+            <channel id="errorsall" typeId="errors" />
+            <channel id="errors5min" typeId="errors" />
         </channels>
         
         <config-description>

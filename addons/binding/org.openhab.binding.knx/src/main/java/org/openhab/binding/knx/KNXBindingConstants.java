@@ -26,7 +26,7 @@ public class KNXBindingConstants {
     /**
      * The group address for identification of this KNX/IP gateway within the KNX bus. Default is 0.0.0
      */
-    public static final String DEFAULT_KNX_GROUP_ADDRESS = "0.0.0";
+    public static final String DEFAULT_LOCAL_SOURCE_ADDRESS = "0.0.0";
 
     public static final String BINDING_ID = "knx";
 
@@ -44,5 +44,14 @@ public class KNXBindingConstants {
     // List of all Channel ids
     public final static String ERRORS_STARTUP = "errorsall";
     public final static String ERRORS_INTERVAL = "errors5min";
+
+    // List of Property ids
+    public final static String FIRMWARE_TYPE = "firmwaretype";
+    public final static String FIRMWARE_VERSION = "firmwareversion";
+    public final static String FIRMWARE_SUBVERSION = "firmwaresubversion";
+    public final static String MANUFACTURER_NAME = "manfacturername";
+    public final static String MANUFACTURER_SERIAL_NO = "manfacturerserialnumber";
+    public final static String MANUFACTURER_HARDWARE_TYPE = "manfacturerhardwaretype";
+    public final static String MANUFACTURER_FIRMWARE_REVISION = "manfacturerfirmwarerevision";
 
 }

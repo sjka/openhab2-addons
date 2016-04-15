@@ -5,7 +5,7 @@
  * which accompanies this distribution, and is available at
  * http://www.eclipse.org/legal/epl-v10.html
  */
-package org.openhab.binding.knx.handler;
+package org.openhab.binding.knx.handler.physical;
 
 import java.math.BigDecimal;
 
@@ -17,6 +17,8 @@ import org.eclipse.smarthome.core.thing.Thing;
 import org.eclipse.smarthome.core.thing.link.ItemChannelLinkRegistry;
 import org.eclipse.smarthome.core.types.State;
 import org.eclipse.smarthome.core.types.Type;
+import org.openhab.binding.knx.handler.KNXBridgeBaseThingHandler;
+import org.openhab.binding.knx.handler.PhysicalActorThingHandler;
 
 import tuwien.auto.calimero.GroupAddress;
 
@@ -26,7 +28,7 @@ import tuwien.auto.calimero.GroupAddress;
  *
  * @author Karel Goderis - Initial contribution
  */
-public class RollerShutterThingHandler extends KNXBaseThingHandler {
+public class RollerShutterThingHandler extends PhysicalActorThingHandler {
 
     // List of all Channel ids
     public final static String CHANNEL_ROLLERSHUTTER = "rollershutter";
@@ -45,88 +47,88 @@ public class RollerShutterThingHandler extends KNXBaseThingHandler {
         super(thing, itemChannelLinkRegistry);
     }
 
-    /*
-     * (non-Javadoc)
-     *
-     * @see org.openhab.binding.knx.handler.GAStatusListener#listensTo(tuwien.auto.calimero.GroupAddress)
-     */
     @Override
-    public boolean listensTo(GroupAddress destination) {
+    public void initialize() {
+        super.initialize();
 
         try {
-            GroupAddress address = new GroupAddress((String) getConfig().get(RollerShutterThingHandler.UP_DOWN_GA));
-
-            if (address.equals(destination)) {
-                return true;
+            if ((String) getConfig().get(UP_DOWN_GA) != null) {
+                GroupAddress address = new GroupAddress((String) getConfig().get(UP_DOWN_GA));
+                if (address != null) {
+                    groupAddresses.add(address);
+                }
             }
         } catch (Exception e) {
-            // do nothing, we move on (either config parameter null, or wrong address format)
+            logger.error("An exception occurred while creating a Group Address : '{}'", e.getMessage());
         }
 
         try {
-            GroupAddress address = new GroupAddress(
-                    (String) getConfig().get(RollerShutterThingHandler.UP_DOWN_STATUS_GA));
-
-            if (address.equals(destination)) {
-                return true;
+            if ((String) getConfig().get(UP_DOWN_STATUS_GA) != null) {
+                GroupAddress address = new GroupAddress((String) getConfig().get(UP_DOWN_STATUS_GA));
+                if (address != null) {
+                    groupAddresses.add(address);
+                    if ((Boolean) getConfig().get(READ)) {
+                        readAddresses.add(address);
+                    }
+                }
             }
         } catch (Exception e) {
-            // do nothing, we move on (either config parameter null, or wrong address format)
+            logger.error("An exception occurred while creating a Group Address : '{}'", e.getMessage());
         }
 
         try {
-            GroupAddress address = new GroupAddress((String) getConfig().get(RollerShutterThingHandler.STOP_MOVE_GA));
-
-            if (address.equals(destination)) {
-                return true;
+            if ((String) getConfig().get(STOP_MOVE_GA) != null) {
+                GroupAddress address = new GroupAddress((String) getConfig().get(STOP_MOVE_GA));
+                if (address != null) {
+                    groupAddresses.add(address);
+                }
             }
         } catch (Exception e) {
-            // do nothing, we move on (either config parameter null, or wrong address format)
+            logger.error("An exception occurred while creating a Group Address : '{}'", e.getMessage());
         }
 
         try {
-            GroupAddress address = new GroupAddress(
-                    (String) getConfig().get(RollerShutterThingHandler.STOP_MOVE_STATUS_GA));
-
-            if (address.equals(destination)) {
-                return true;
+            if ((String) getConfig().get(STOP_MOVE_STATUS_GA) != null) {
+                GroupAddress address = new GroupAddress((String) getConfig().get(STOP_MOVE_STATUS_GA));
+                if (address != null) {
+                    groupAddresses.add(address);
+                    if ((Boolean) getConfig().get(READ)) {
+                        readAddresses.add(address);
+                    }
+                }
             }
         } catch (Exception e) {
-            // do nothing, we move on (either config parameter null, or wrong address format)
+            logger.error("An exception occurred while creating a Group Address : '{}'", e.getMessage());
         }
 
         try {
-            GroupAddress address = new GroupAddress((String) getConfig().get(RollerShutterThingHandler.POSITION_GA));
-
-            if (address.equals(destination)) {
-                return true;
+            if ((String) getConfig().get(POSITION_GA) != null) {
+                GroupAddress address = new GroupAddress((String) getConfig().get(POSITION_GA));
+                if (address != null) {
+                    groupAddresses.add(address);
+                }
             }
         } catch (Exception e) {
-            // do nothing, we move on (either config parameter null, or wrong address format)
+            logger.error("An exception occurred while creating a Group Address : '{}'", e.getMessage());
         }
 
         try {
-            GroupAddress address = new GroupAddress(
-                    (String) getConfig().get(RollerShutterThingHandler.POSITION_STATUS_GA));
-
-            if (address.equals(destination)) {
-                return true;
+            if ((String) getConfig().get(POSITION_STATUS_GA) != null) {
+                GroupAddress address = new GroupAddress((String) getConfig().get(POSITION_STATUS_GA));
+                if (address != null) {
+                    groupAddresses.add(address);
+                    if ((Boolean) getConfig().get(READ)) {
+                        readAddresses.add(address);
+                    }
+                }
             }
         } catch (Exception e) {
-            // do nothing, we move on (either config parameter null, or wrong address format)
+            logger.error("An exception occurred while creating a Group Address : '{}'", e.getMessage());
         }
-
-        return false;
     }
 
-    /*
-     * (non-Javadoc)
-     *
-     * @see org.openhab.binding.knx.handler.KNXBaseThingHandler#processDataReceived(tuwien.auto.calimero.GroupAddress,
-     * org.eclipse.smarthome.core.types.Type)
-     */
     @Override
-    void processDataReceived(GroupAddress destination, Type state) {
+    public void processDataReceived(GroupAddress destination, Type state) {
 
         if (state instanceof PercentType) {
             lastPosition = (PercentType) state;
@@ -135,7 +137,7 @@ public class RollerShutterThingHandler extends KNXBaseThingHandler {
         try {
             GroupAddress address = new GroupAddress((String) getConfig().get(POSITION_STATUS_GA));
             if (address.equals(destination)) {
-                updateStateAndIgnore(new ChannelUID(getThing().getUID(), CHANNEL_ROLLERSHUTTER), (State) state);
+                updateState(new ChannelUID(getThing().getUID(), CHANNEL_ROLLERSHUTTER), (State) state);
             }
         } catch (Exception e) {
             // do nothing, we move on (either config parameter null, or wrong address format)
@@ -144,7 +146,7 @@ public class RollerShutterThingHandler extends KNXBaseThingHandler {
         try {
             GroupAddress address = new GroupAddress((String) getConfig().get(STOP_MOVE_STATUS_GA));
             if (address.equals(destination)) {
-                updateStateAndIgnore(new ChannelUID(getThing().getUID(), CHANNEL_ROLLERSHUTTER), (State) state);
+                updateState(new ChannelUID(getThing().getUID(), CHANNEL_ROLLERSHUTTER), (State) state);
             }
         } catch (Exception e) {
             // do nothing, we move on (either config parameter null, or wrong address format)
@@ -153,7 +155,7 @@ public class RollerShutterThingHandler extends KNXBaseThingHandler {
         try {
             GroupAddress address = new GroupAddress((String) getConfig().get(UP_DOWN_STATUS_GA));
             if (address.equals(destination)) {
-                updateStateAndIgnore(new ChannelUID(getThing().getUID(), CHANNEL_ROLLERSHUTTER), (State) state);
+                updateState(new ChannelUID(getThing().getUID(), CHANNEL_ROLLERSHUTTER), (State) state);
             }
         } catch (Exception e) {
             // do nothing, we move on (either config parameter null, or wrong address format)
@@ -161,13 +163,8 @@ public class RollerShutterThingHandler extends KNXBaseThingHandler {
 
     }
 
-    /*
-     * (non-Javadoc)
-     *
-     * @see org.openhab.binding.knx.handler.KNXBaseThingHandler#getDPT(tuwien.auto.calimero.GroupAddress)
-     */
     @Override
-    String getDPT(GroupAddress destination) {
+    public String getDPT(GroupAddress destination) {
 
         try {
             GroupAddress address = new GroupAddress((String) getConfig().get(RollerShutterThingHandler.UP_DOWN_GA));
@@ -235,31 +232,8 @@ public class RollerShutterThingHandler extends KNXBaseThingHandler {
         return null;
     }
 
-    /*
-     * (non-Javadoc)
-     *
-     * @see org.openhab.binding.knx.handler.KNXBaseThingHandler#intializeDatapoints()
-     */
     @Override
-    void initializeReadAddresses() {
-        if ((Boolean) getConfig().get(READ)) {
-
-            if ((String) getConfig().get(RollerShutterThingHandler.UP_DOWN_STATUS_GA) != null) {
-                addresses.add((String) getConfig().get(RollerShutterThingHandler.UP_DOWN_STATUS_GA));
-            }
-
-            if ((String) getConfig().get(RollerShutterThingHandler.STOP_MOVE_STATUS_GA) != null) {
-                addresses.add((String) getConfig().get(RollerShutterThingHandler.STOP_MOVE_STATUS_GA));
-            }
-
-            if ((String) getConfig().get(RollerShutterThingHandler.POSITION_STATUS_GA) != null) {
-                addresses.add((String) getConfig().get(RollerShutterThingHandler.POSITION_STATUS_GA));
-            }
-        }
-    }
-
-    @Override
-    String getDPT(ChannelUID channelUID, Type command) {
+    public String getDPT(ChannelUID channelUID, Type command) {
 
         if ((String) getConfig().get(RollerShutterThingHandler.UP_DOWN_GA) == null
                 && (String) getConfig().get(RollerShutterThingHandler.POSITION_GA) != null) {
@@ -270,7 +244,7 @@ public class RollerShutterThingHandler extends KNXBaseThingHandler {
     }
 
     @Override
-    String getAddress(ChannelUID channelUID, Type command) {
+    public String getAddress(ChannelUID channelUID, Type command) {
 
         if ((String) getConfig().get(RollerShutterThingHandler.UP_DOWN_GA) == null
                 && (String) getConfig().get(RollerShutterThingHandler.POSITION_GA) != null) {
@@ -293,7 +267,7 @@ public class RollerShutterThingHandler extends KNXBaseThingHandler {
     }
 
     @Override
-    Type getType(ChannelUID channelUID, Type command) {
+    public Type getType(ChannelUID channelUID, Type command) {
 
         if (command instanceof UpDownType) {
             if ((String) getConfig().get(RollerShutterThingHandler.UP_DOWN_GA) == null

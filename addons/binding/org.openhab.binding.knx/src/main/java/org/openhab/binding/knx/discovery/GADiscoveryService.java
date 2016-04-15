@@ -16,8 +16,9 @@ import org.eclipse.smarthome.config.discovery.DiscoveryResultBuilder;
 import org.eclipse.smarthome.core.thing.ThingTypeUID;
 import org.eclipse.smarthome.core.thing.ThingUID;
 import org.openhab.binding.knx.KNXBindingConstants;
-import org.openhab.binding.knx.handler.GAThingHandler;
 import org.openhab.binding.knx.handler.KNXBridgeBaseThingHandler;
+import org.openhab.binding.knx.handler.physical.GroupAddressThingHandler;
+
 import tuwien.auto.calimero.GroupAddress;
 import tuwien.auto.calimero.IndividualAddress;
 import com.google.common.collect.Sets;
@@ -71,8 +72,8 @@ public class GADiscoveryService extends AbstractDiscoveryService implements KNXB
 			ThingUID thingUID = new ThingUID(KNXBindingConstants.THING_TYPE_GA, destination.toString().replaceAll("/", "_"), bridgeUID.getId());
 
 			Map<String, Object> properties = new HashMap<>(1);
-			properties.put(GAThingHandler.ADDRESS, destination.toString());
-			properties.put(GAThingHandler.READ,Boolean.FALSE);
+			properties.put(GroupAddressThingHandler.ADDRESS, destination.toString());
+			properties.put(GroupAddressThingHandler.READ,Boolean.FALSE);
 			DiscoveryResult discoveryResult = DiscoveryResultBuilder.create(thingUID)
 					.withProperties(properties)
 					.withBridge(bridgeUID)

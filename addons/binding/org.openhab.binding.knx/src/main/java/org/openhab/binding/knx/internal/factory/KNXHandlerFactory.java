@@ -14,15 +14,15 @@ import java.util.Map;
 
 import org.openhab.binding.knx.KNXBindingConstants;
 import org.openhab.binding.knx.discovery.GADiscoveryService;
-import org.openhab.binding.knx.handler.DimmerThingHandler;
-import org.openhab.binding.knx.handler.EnergySwitchThingHandler;
-import org.openhab.binding.knx.handler.GAThingHandler;
 import org.openhab.binding.knx.handler.KNXBridgeBaseThingHandler;
 import org.openhab.binding.knx.handler.IPBridgeThingHandler;
-import org.openhab.binding.knx.handler.RollerShutterSwitchThingHandler;
-import org.openhab.binding.knx.handler.RollerShutterThingHandler;
 import org.openhab.binding.knx.handler.SerialBridgeThingHandler;
-import org.openhab.binding.knx.handler.SwitchThingHandler;
+import org.openhab.binding.knx.handler.physical.DimmerThingHandler;
+import org.openhab.binding.knx.handler.physical.EnergySwitchThingHandler;
+import org.openhab.binding.knx.handler.physical.GroupAddressThingHandler;
+import org.openhab.binding.knx.handler.physical.RollerShutterSwitchThingHandler;
+import org.openhab.binding.knx.handler.physical.RollerShutterThingHandler;
+import org.openhab.binding.knx.handler.physical.SwitchThingHandler;
 import org.eclipse.smarthome.config.core.Configuration;
 import org.eclipse.smarthome.config.discovery.DiscoveryService;
 import org.eclipse.smarthome.core.thing.Bridge;
@@ -115,7 +115,7 @@ public class KNXHandlerFactory extends BaseThingHandlerFactory {
             registerGADiscoveryService(handler);
             return handler;
         } else if (thing.getThingTypeUID().equals(KNXBindingConstants.THING_TYPE_GA)) {
-            return new GAThingHandler(thing, itemChannelLinkRegistry);
+            return new GroupAddressThingHandler(thing, itemChannelLinkRegistry);
         } else if (thing.getThingTypeUID().equals(KNXBindingConstants.THING_TYPE_SWITCH)) {
             return new SwitchThingHandler(thing, itemChannelLinkRegistry);
         } else if (thing.getThingTypeUID().equals(KNXBindingConstants.THING_TYPE_ENERGY_SWITCH)) {
@@ -149,7 +149,7 @@ public class KNXHandlerFactory extends BaseThingHandlerFactory {
 
     private ThingUID getGAThingUID(ThingTypeUID thingTypeUID, ThingUID thingUID, Configuration configuration,
             ThingUID bridgeUID) {
-        String address = ((String) configuration.get(GAThingHandler.ADDRESS)).replaceAll("/", "_");
+        String address = ((String) configuration.get(GroupAddressThingHandler.ADDRESS)).replaceAll("/", "_");
 
         if (thingUID == null) {
             thingUID = new ThingUID(thingTypeUID, address, bridgeUID.getId());

@@ -7,6 +7,7 @@
  */
 package org.openhab.binding.knx.handler;
 
+import java.io.ByteArrayOutputStream;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -29,7 +30,10 @@ import org.eclipse.smarthome.core.thing.link.ItemChannelLinkRegistry;
 import org.eclipse.smarthome.core.types.Command;
 import org.eclipse.smarthome.core.types.State;
 import org.eclipse.smarthome.core.types.Type;
+import org.openhab.binding.knx.GroupAddressListener;
+import org.openhab.binding.knx.IndividualAddressListener;
 import org.openhab.binding.knx.KNXBindingConstants;
+import org.openhab.binding.knx.KNXBridgeListener;
 import org.openhab.binding.knx.discovery.KNXBusListener;
 import org.openhab.binding.knx.internal.dpt.KNXCoreTypeMapper;
 import org.openhab.binding.knx.internal.dpt.KNXTypeMapper;
@@ -41,6 +45,7 @@ import tuwien.auto.calimero.CloseEvent;
 import tuwien.auto.calimero.DetachEvent;
 import tuwien.auto.calimero.FrameEvent;
 import tuwien.auto.calimero.GroupAddress;
+import tuwien.auto.calimero.IndividualAddress;
 import tuwien.auto.calimero.cemi.CEMILData;
 import tuwien.auto.calimero.datapoint.CommandDP;
 import tuwien.auto.calimero.datapoint.Datapoint;
@@ -50,6 +55,11 @@ import tuwien.auto.calimero.exception.KNXIllegalArgumentException;
 import tuwien.auto.calimero.link.KNXNetworkLink;
 import tuwien.auto.calimero.link.NetworkLinkListener;
 import tuwien.auto.calimero.log.LogManager;
+import tuwien.auto.calimero.mgmt.Destination;
+import tuwien.auto.calimero.mgmt.ManagementClient;
+import tuwien.auto.calimero.mgmt.ManagementClientImpl;
+import tuwien.auto.calimero.mgmt.ManagementProcedures;
+import tuwien.auto.calimero.mgmt.ManagementProceduresImpl;
 import tuwien.auto.calimero.process.ProcessCommunicator;
 import tuwien.auto.calimero.process.ProcessCommunicatorImpl;
 import tuwien.auto.calimero.process.ProcessEvent;
@@ -61,7 +71,7 @@ import tuwien.auto.calimero.process.ProcessListenerEx;
  *
  * @author Kai Kreuzer / Karel Goderis - Initial contribution
  */
-public abstract class KNXBridgeBaseThingHandler extends BaseThingHandler implements GAStatusListener {
+public abstract class KNXBridgeBaseThingHandler extends BaseThingHandler implements GroupAddressListener {
 
     // List of all Configuration parameters
     public static final String AUTO_RECONNECT_PERIOD = "autoReconnectPeriod";
@@ -89,7 +99,9 @@ public abstract class KNXBridgeBaseThingHandler extends BaseThingHandler impleme
     // used to store events that we have sent ourselves; we need to remember them for not reacting to them
     // private static List<String> ignoreEventList = new ArrayList<String>();
 
-    private List<GAStatusListener> gaStatusListeners = new CopyOnWriteArrayList<>();
+    private List<GroupAddressListener> groupAddressListeners = new CopyOnWriteArrayList<>();
+    private List<IndividualAddressListener> individualAddressListeners = new CopyOnWriteArrayList<>();
+    private List<KNXBridgeListener> knxBridgeListeners = new CopyOnWriteArrayList<>();
     private List<KNXBusListener> knxBusListeners = new CopyOnWriteArrayList<>();
     static protected Collection<KNXTypeMapper> typeMappers = new HashSet<KNXTypeMapper>();
     private LinkedBlockingQueue<RetryDatapoint> readDatapoints = new LinkedBlockingQueue<RetryDatapoint>();
@@ -97,11 +109,15 @@ public abstract class KNXBridgeBaseThingHandler extends BaseThingHandler impleme
     protected ItemChannelLinkRegistry itemChannelLinkRegistry;
     private ProcessCommunicator pc = null;
     private ProcessListenerEx pl = null;
-    private final LogAdapter logAdapter = new LogAdapter();
+    private ManagementProcedures mp;
+    private ManagementClient mc;
     protected KNXNetworkLink link;
+    private final LogAdapter logAdapter = new LogAdapter();
+
     private ScheduledFuture<?> reconnectJob;
     private ScheduledFuture<?> busJob;
     private List<ScheduledFuture<?>> readJobs;
+
     // signals that the connection is shut down on purpose
     public boolean shutdown = false;
     private long intervalTimestamp;
@@ -116,14 +132,15 @@ public abstract class KNXBridgeBaseThingHandler extends BaseThingHandler impleme
     @Override
     public void initialize() {
 
-        // register ourselves as a Group Address Status Listener
-        registerGAStatusListener(this);
+        // register ourselves as a Group Address Listener
+        registerGroupAddressListener(this);
 
         // reset the counters
         errorsSinceStart = 0;
         errorsSinceInterval = 0;
 
         LogManager.getManager().addWriter(null, logAdapter);
+        logger.trace("Connecting bridge");
         connect();
     }
 
@@ -137,15 +154,9 @@ public abstract class KNXBridgeBaseThingHandler extends BaseThingHandler impleme
         disconnect();
 
         // unregister ourselves as a Group Address Status Listener
-        unregisterGAStatusListener(this);
+        unregisterGroupAddressListener(this);
 
         LogManager.getManager().removeWriter(null, logAdapter);
-    }
-
-    @Override
-    public void thingUpdated(Thing thing) {
-        dispose();
-        initialize();
     }
 
     /**
@@ -215,6 +226,11 @@ public abstract class KNXBridgeBaseThingHandler extends BaseThingHandler impleme
                 @Override
                 public void indication(FrameEvent e) {
 
+                    CEMILData cemid = (CEMILData) e.getFrame();
+                    logger.trace("Received indication frame from {} to {} : Code {} AckReq {} PosConf {} Repit {}",
+                            new Object[] { cemid.getSource(), cemid.getDestination(), cemid.getMessageCode(),
+                                    cemid.isAckRequested(), cemid.isPositiveConfirmation(), cemid.isRepetition() });
+
                     if (intervalTimestamp == 0) {
                         intervalTimestamp = System.currentTimeMillis();
                         updateState(new ChannelUID(getThing().getUID(), KNXBindingConstants.ERRORS_STARTUP),
@@ -250,6 +266,11 @@ public abstract class KNXBridgeBaseThingHandler extends BaseThingHandler impleme
 
                 @Override
                 public void confirmation(FrameEvent e) {
+
+                    CEMILData cemid = (CEMILData) e.getFrame();
+                    logger.trace("Received confirmation frame from {} to {} : Code {} AckReq {} PosConf {} Repit {}",
+                            new Object[] { cemid.getSource(), cemid.getDestination(), cemid.getMessageCode(),
+                                    cemid.isAckRequested(), cemid.isPositiveConfirmation(), cemid.isRepetition() });
 
                     if (intervalTimestamp == 0) {
                         intervalTimestamp = System.currentTimeMillis();
@@ -291,6 +312,8 @@ public abstract class KNXBridgeBaseThingHandler extends BaseThingHandler impleme
             establishConnection();
 
             if (link != null) {
+                mp = new ManagementProceduresImpl(link);
+                mc = new ManagementClientImpl(link);
                 link.addLinkListener(linkListener);
             }
 
@@ -310,19 +333,17 @@ public abstract class KNXBridgeBaseThingHandler extends BaseThingHandler impleme
 
                 @Override
                 public void groupWrite(ProcessEvent e) {
-                    logger.debug("Received a GroupWrite from '{}'", e.getSourceAddr());
-                    readFromKNX(e);
+                    onGroupWriteEvent(e);
                 }
 
                 @Override
                 public void groupReadRequest(ProcessEvent e) {
-                    logger.debug("Received a GroupReadRequest from '{}'", e.getSourceAddr());
+                    onGroupReadEvent(e);
                 }
 
                 @Override
                 public void groupReadResponse(ProcessEvent e) {
-                    logger.debug("Received a GroupReadResponse from '{}'", e.getSourceAddr());
-                    readFromKNX(e);
+                    onGroupReadResponseEvent(e);
                 }
 
             };
@@ -337,7 +358,6 @@ public abstract class KNXBridgeBaseThingHandler extends BaseThingHandler impleme
             logger.error("Error connecting to KNX bus: {}", e.getMessage());
             disconnect();
         }
-
     }
 
     public synchronized void disconnect() {
@@ -373,7 +393,7 @@ public abstract class KNXBridgeBaseThingHandler extends BaseThingHandler impleme
     public void onConnectionLost() {
         updateStatus(ThingStatus.OFFLINE);
 
-        for (GAStatusListener listener : gaStatusListeners) {
+        for (KNXBridgeListener listener : knxBridgeListeners) {
             listener.onBridgeDisconnected(this);
         }
     }
@@ -442,52 +462,78 @@ public abstract class KNXBridgeBaseThingHandler extends BaseThingHandler impleme
             }
         }
 
-        for (GAStatusListener listener : gaStatusListeners) {
-            listener.onBridgeConnected(this);
-        }
-
         updateStatus(ThingStatus.ONLINE);
 
         errorsSinceStart = 0;
         errorsSinceInterval = 0;
+
+        for (KNXBridgeListener listener : knxBridgeListeners) {
+            listener.onBridgeConnected(this);
+        }
     }
 
-    @Override
-    public void onBridgeConnected(KNXBridgeBaseThingHandler bridge) {
-        // Do nothing, since we are the bridge
-    }
-
-    @Override
-    public void onBridgeDisconnected(KNXBridgeBaseThingHandler bridge) {
-        // Do nothing, since we are the bridge
-    }
-
-    @Override
-    public boolean listensTo(GroupAddress destination) {
-        // Bridges are allowed to listen to any GA that flies by on the bus, even if they do not have channel that
-        // actively
-        // uses that GA
-        return true;
-    }
-
-    public boolean registerGAStatusListener(GAStatusListener gaStatusListener) {
-        if (gaStatusListener == null) {
-            throw new NullPointerException("It's not allowed to pass a null GAStatusListener.");
+    public boolean registerGroupAddressListener(GroupAddressListener listener) {
+        if (listener == null) {
+            throw new NullPointerException("It's not allowed to pass a null GroupAddressListener.");
         }
         boolean result = false;
-        if (gaStatusListeners.contains(gaStatusListener)) {
+        if (groupAddressListeners.contains(listener)) {
             result = true;
         } else {
-            result = gaStatusListeners.add(gaStatusListener);
+            result = groupAddressListeners.add(listener);
         }
         return result;
     }
 
-    public boolean unregisterGAStatusListener(GAStatusListener gaStatusListener) {
-        if (gaStatusListener == null) {
-            throw new NullPointerException("It's not allowed to pass a null GAStatusListener.");
+    public boolean unregisterGroupAddressListener(GroupAddressListener listener) {
+        if (listener == null) {
+            throw new NullPointerException("It's not allowed to pass a null GroupAddressListener.");
         }
-        boolean result = gaStatusListeners.remove(gaStatusListener);
+        boolean result = groupAddressListeners.remove(listener);
+
+        return result;
+    }
+
+    public boolean registerIndividualAddressListener(IndividualAddressListener listener) {
+        if (listener == null) {
+            throw new NullPointerException("It's not allowed to pass a null IndividualAddressListener.");
+        }
+        boolean result = false;
+        if (individualAddressListeners.contains(listener)) {
+            result = true;
+        } else {
+            result = individualAddressListeners.add(listener);
+        }
+        return result;
+    }
+
+    public boolean unregisterIndividualAddressListener(IndividualAddressListener listener) {
+        if (listener == null) {
+            throw new NullPointerException("It's not allowed to pass a null IndividualAddressListener.");
+        }
+        boolean result = individualAddressListeners.remove(listener);
+
+        return result;
+    }
+
+    public boolean registerKNXBridgeListener(KNXBridgeListener listener) {
+        if (listener == null) {
+            throw new NullPointerException("It's not allowed to pass a null KNXBridgeListener.");
+        }
+        boolean result = false;
+        if (knxBridgeListeners.contains(listener)) {
+            result = true;
+        } else {
+            result = knxBridgeListeners.add(listener);
+        }
+        return result;
+    }
+
+    public boolean unregisterKNXBridgeListener(GroupAddressListener listener) {
+        if (listener == null) {
+            throw new NullPointerException("It's not allowed to pass a null KNXBridgeListener.");
+        }
+        boolean result = knxBridgeListeners.remove(listener);
 
         return result;
     }
@@ -660,25 +706,148 @@ public abstract class KNXBridgeBaseThingHandler extends BaseThingHandler impleme
 
     /**
      * Handles the given {@link ProcessEvent}. If the KNX ASDU is valid
-     * it is passed on to the {@link GAStatusListener}s that are interested
-     * in the destination Group Address, and subsequently to the
+     * it is passed on to the {@link IndividualAddressListener}s and {@link GroupAddressListener}s that are interested
+     * in the telegram, and subsequently to the
      * {@link KNXBusListener}s that are interested in all KNX bus activity
      *
      * @param e the {@link ProcessEvent} to handle.
      */
-    private void readFromKNX(ProcessEvent e) {
+    private void onGroupWriteEvent(ProcessEvent e) {
         try {
             GroupAddress destination = e.getDestination();
+            IndividualAddress source = e.getSourceAddr();
             byte[] asdu = e.getASDU();
             if (asdu.length == 0) {
                 return;
             }
 
-            logger.trace("Received a KNX telegram from '{}' for destination '{}'", e.getSourceAddr(), destination);
+            logger.debug("Received a Group Write telegram from '{}' for destination '{}'", e.getSourceAddr(),
+                    destination);
 
-            for (GAStatusListener listener : gaStatusListeners) {
+            for (IndividualAddressListener listener : individualAddressListeners) {
+                if (listener.listensTo(source)) {
+                    if (listener instanceof GroupAddressListener
+                            && ((GroupAddressListener) listener).listensTo(destination)) {
+                        listener.onGroupWrite(this, source, destination, asdu);
+                    } else {
+                        listener.onGroupWrite(this, source, destination, asdu);
+                    }
+
+                }
+            }
+
+            for (GroupAddressListener listener : groupAddressListeners) {
                 if (listener.listensTo(destination)) {
-                    listener.onDataReceived(this, destination, asdu);
+                    if (listener instanceof IndividualAddressListener
+                            && !((IndividualAddressListener) listener).listensTo(source)) {
+                        listener.onGroupWrite(this, source, destination, asdu);
+                    } else {
+                        listener.onGroupWrite(this, source, destination, asdu);
+                    }
+                }
+            }
+
+            for (KNXBusListener listener : knxBusListeners) {
+                listener.onActivity(e.getSourceAddr(), destination, asdu);
+            }
+
+        } catch (RuntimeException re) {
+            logger.error("Error while receiving event from KNX bus: " + re.toString());
+        }
+    }
+
+    /**
+     * Handles the given {@link ProcessEvent}. If the KNX ASDU is valid
+     * it is passed on to the {@link IndividualAddressListener}s and {@link GroupAddressListener}s that are interested
+     * in the telegram, and subsequently to the
+     * {@link KNXBusListener}s that are interested in all KNX bus activity
+     *
+     * @param e the {@link ProcessEvent} to handle.
+     */
+    private void onGroupReadEvent(ProcessEvent e) {
+        try {
+            GroupAddress destination = e.getDestination();
+            IndividualAddress source = e.getSourceAddr();
+            byte[] asdu = e.getASDU();
+            if (asdu.length == 0) {
+                return;
+            }
+
+            logger.debug("Received a Group Read telegram from '{}' for destination '{}'", e.getSourceAddr(),
+                    destination);
+
+            for (IndividualAddressListener listener : individualAddressListeners) {
+                if (listener.listensTo(source)) {
+                    if (listener instanceof GroupAddressListener
+                            && ((GroupAddressListener) listener).listensTo(destination)) {
+                        listener.onGroupRead(this, source, destination, asdu);
+                    } else {
+                        listener.onGroupRead(this, source, destination, asdu);
+                    }
+
+                }
+            }
+
+            for (GroupAddressListener listener : groupAddressListeners) {
+                if (listener.listensTo(destination)) {
+                    if (listener instanceof IndividualAddressListener
+                            && !((IndividualAddressListener) listener).listensTo(source)) {
+                        listener.onGroupRead(this, source, destination, asdu);
+                    } else {
+                        listener.onGroupRead(this, source, destination, asdu);
+                    }
+                }
+            }
+
+            for (KNXBusListener listener : knxBusListeners) {
+                listener.onActivity(e.getSourceAddr(), destination, asdu);
+            }
+
+        } catch (RuntimeException re) {
+            logger.error("Error while receiving event from KNX bus: " + re.toString());
+        }
+    }
+
+    /**
+     * Handles the given {@link ProcessEvent}. If the KNX ASDU is valid
+     * it is passed on to the {@link IndividualAddressListener}s and {@link GroupAddressListener}s that are interested
+     * in the telegram, and subsequently to the
+     * {@link KNXBusListener}s that are interested in all KNX bus activity
+     *
+     * @param e the {@link ProcessEvent} to handle.
+     */
+    private void onGroupReadResponseEvent(ProcessEvent e) {
+        try {
+            GroupAddress destination = e.getDestination();
+            IndividualAddress source = e.getSourceAddr();
+            byte[] asdu = e.getASDU();
+            if (asdu.length == 0) {
+                return;
+            }
+
+            logger.debug("Received a Group Read telegram from '{}' for destination '{}'", e.getSourceAddr(),
+                    destination);
+
+            for (IndividualAddressListener listener : individualAddressListeners) {
+                if (listener.listensTo(source)) {
+                    if (listener instanceof GroupAddressListener
+                            && ((GroupAddressListener) listener).listensTo(destination)) {
+                        listener.onGroupReadResponse(this, source, destination, asdu);
+                    } else {
+                        listener.onGroupReadResponse(this, source, destination, asdu);
+                    }
+
+                }
+            }
+
+            for (GroupAddressListener listener : groupAddressListeners) {
+                if (listener.listensTo(destination)) {
+                    if (listener instanceof IndividualAddressListener
+                            && !((IndividualAddressListener) listener).listensTo(source)) {
+                        listener.onGroupReadResponse(this, source, destination, asdu);
+                    } else {
+                        listener.onGroupReadResponse(this, source, destination, asdu);
+                    }
                 }
             }
 
@@ -742,7 +911,15 @@ public abstract class KNXBridgeBaseThingHandler extends BaseThingHandler impleme
     }
 
     @Override
-    public void onDataReceived(KNXBridgeBaseThingHandler bridge, GroupAddress destination, byte[] asdu) {
+    public boolean listensTo(GroupAddress destination) {
+        // Bridges are allowed to listen to any GA that flies by on the bus, even if they do not have channel that
+        // actively uses that GA
+        return true;
+    }
+
+    @Override
+    public void onGroupWrite(KNXBridgeBaseThingHandler bridge, IndividualAddress source, GroupAddress destination,
+            byte[] asdu) {
 
         for (Channel channel : getThing().getChannels()) {
 
@@ -760,8 +937,19 @@ public abstract class KNXBridgeBaseThingHandler extends BaseThingHandler impleme
                     break;
                 }
             }
-
         }
+    }
+
+    @Override
+    public void onGroupRead(KNXBridgeBaseThingHandler bridge, IndividualAddress source, GroupAddress destination,
+            byte[] asdu) {
+        // Nothing to do here - bridges should not respond to group read requests
+    }
+
+    @Override
+    public void onGroupReadResponse(KNXBridgeBaseThingHandler bridge, IndividualAddress source,
+            GroupAddress destination, byte[] asdu) {
+        onGroupWrite(bridge, source, destination, asdu);
     }
 
     private void processDataReceived(GroupAddress destination, byte[] asdu, String dpt, String channelAddress,
@@ -880,4 +1068,74 @@ public abstract class KNXBridgeBaseThingHandler extends BaseThingHandler impleme
             throw new IllegalArgumentException("Channel with ID '" + channelId + "' does not exists.");
         }
     }
+
+    public boolean isReachable(IndividualAddress address) {
+        if (mp != null) {
+            try {
+                return mp.isAddressOccupied(address);
+            } catch (KNXException | InterruptedException e) {
+                logger.error("An exception occurred while trying to reach address '{}' : {}", address.toString(),
+                        e.getMessage());
+            }
+        }
+
+        return false;
+    }
+
+    public byte[] readDeviceDescription(IndividualAddress address, int descType) {
+
+        try {
+            if (address != null) {
+                Destination destination = mc.createDestination(address, true);
+                byte[] result = mc.readDeviceDesc(destination, descType);
+                destination.destroy();
+                return result;
+            }
+        } catch (Exception e) {
+            logger.error("An exception occurred while trying to reach address '{}' : {}", address.toString(),
+                    e.getMessage());
+        }
+
+        return null;
+    }
+
+    public byte[] readDeviceMemory(IndividualAddress address, int startAddress, int bytes, boolean hex) {
+
+        try {
+            if (address != null) {
+                Destination destination = mc.createDestination(address, true);
+                byte[] result = mc.readMemory(destination, startAddress, bytes);
+                destination.destroy();
+                return result;
+            }
+        } catch (Exception e) {
+            logger.error("An exception occurred while trying to reach address '{}' : {}", address.toString(),
+                    e.getMessage());
+        }
+
+        return null;
+
+    }
+
+    public byte[] readDeviceProperties(IndividualAddress address, final int interfaceObjectIndex, final int propertyId,
+            final int start, final int elements) throws InterruptedException {
+        try {
+            if (address != null) {
+                Destination destination = mc.createDestination(address, true);
+                final ByteArrayOutputStream res = new ByteArrayOutputStream();
+                for (int i = start; i < start + elements; i++) {
+                    final byte[] data = mc.readProperty(destination, interfaceObjectIndex, propertyId, i, 1);
+                    res.write(data, 0, data.length);
+                }
+                destination.destroy();
+                return res.toByteArray();
+            }
+        } catch (final Exception e) {
+            logger.error("An exception occurred while trying to read a device property '{}' : {}", address.toString(),
+                    e.getMessage());
+        }
+
+        return null;
+    }
+
 }

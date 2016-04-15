@@ -1,7 +1,7 @@
 /**
  *
  */
-package org.openhab.binding.knx.handler;
+package org.openhab.binding.knx.handler.physical;
 
 import org.eclipse.smarthome.core.library.types.OnOffType;
 import org.eclipse.smarthome.core.thing.ChannelUID;
@@ -9,6 +9,7 @@ import org.eclipse.smarthome.core.thing.Thing;
 import org.eclipse.smarthome.core.thing.link.ItemChannelLinkRegistry;
 import org.eclipse.smarthome.core.types.State;
 import org.eclipse.smarthome.core.types.Type;
+import org.openhab.binding.knx.handler.KNXBridgeBaseThingHandler;
 
 import tuwien.auto.calimero.GroupAddress;
 
@@ -36,29 +37,61 @@ public class EnergySwitchThingHandler extends SwitchThingHandler {
         super(thing, itemChannelLinkRegistry);
     }
 
-    /*
-     * (non-Javadoc)
-     *
-     * @see org.openhab.binding.knx.handler.GAStatusListener#listensTo(tuwien.auto.calimero.GroupAddress)
-     */
     @Override
-    public boolean listensTo(GroupAddress destination) {
+    public void initialize() {
+        super.initialize();
 
         try {
-            GroupAddress address = new GroupAddress((String) getConfig().get(SWITCH_GA));
-
-            if (address.equals(destination)) {
-                return true;
+            if ((String) getConfig().get(OPERATING_HOURS_GA) != null) {
+                GroupAddress address = new GroupAddress((String) getConfig().get(OPERATING_HOURS_GA));
+                if (address != null) {
+                    groupAddresses.add(address);
+                    if ((Boolean) getConfig().get(READ)) {
+                        readAddresses.add(address);
+                    }
+                }
             }
         } catch (Exception e) {
-            // do nothing, we move on (either config parameter null, or wrong address format)
+            logger.error("An exception occurred while creating a Group Address : '{}'", e.getMessage());
         }
+
+        try {
+            if ((String) getConfig().get(CURRENT_GA) != null) {
+                GroupAddress address = new GroupAddress((String) getConfig().get(CURRENT_GA));
+                if (address != null) {
+                    groupAddresses.add(address);
+                    if ((Boolean) getConfig().get(READ)) {
+                        readAddresses.add(address);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            logger.error("An exception occurred while creating a Group Address : '{}'", e.getMessage());
+        }
+
+        try {
+            if ((String) getConfig().get(ENERGY_GA) != null) {
+                GroupAddress address = new GroupAddress((String) getConfig().get(ENERGY_GA));
+                if (address != null) {
+                    groupAddresses.add(address);
+                    if ((Boolean) getConfig().get(READ)) {
+                        readAddresses.add(address);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            logger.error("An exception occurred while creating a Group Address : '{}'", e.getMessage());
+        }
+    }
+
+    @Override
+    public void processDataReceived(GroupAddress destination, Type state) {
 
         try {
             GroupAddress address = new GroupAddress((String) getConfig().get(STATUS_GA));
 
             if (address.equals(destination)) {
-                return true;
+                updateState(new ChannelUID(getThing().getUID(), CHANNEL_SWITCH), (State) state);
             }
         } catch (Exception e) {
             // do nothing, we move on (either config parameter null, or wrong address format)
@@ -68,7 +101,7 @@ public class EnergySwitchThingHandler extends SwitchThingHandler {
             GroupAddress address = new GroupAddress((String) getConfig().get(OPERATING_HOURS_GA));
 
             if (address.equals(destination)) {
-                return true;
+                updateState(new ChannelUID(getThing().getUID(), CHANNEL_OPERATING_HOURS), (State) state);
             }
         } catch (Exception e) {
             // do nothing, we move on (either config parameter null, or wrong address format)
@@ -78,7 +111,7 @@ public class EnergySwitchThingHandler extends SwitchThingHandler {
             GroupAddress address = new GroupAddress((String) getConfig().get(CURRENT_GA));
 
             if (address.equals(destination)) {
-                return true;
+                updateState(new ChannelUID(getThing().getUID(), CHANNEL_CURRENT), (State) state);
             }
         } catch (Exception e) {
             // do nothing, we move on (either config parameter null, or wrong address format)
@@ -88,72 +121,15 @@ public class EnergySwitchThingHandler extends SwitchThingHandler {
             GroupAddress address = new GroupAddress((String) getConfig().get(ENERGY_GA));
 
             if (address.equals(destination)) {
-                return true;
-            }
-        } catch (Exception e) {
-            // do nothing, we move on (either config parameter null, or wrong address format)
-        }
-
-        return false;
-    }
-
-    /*
-     * (non-Javadoc)
-     *
-     * @see org.openhab.binding.knx.handler.KNXBaseThingHandler#processDataReceived(tuwien.auto.calimero.GroupAddress,
-     * org.eclipse.smarthome.core.types.Type)
-     */
-    @Override
-    void processDataReceived(GroupAddress destination, Type state) {
-
-        try {
-            GroupAddress address = new GroupAddress((String) getConfig().get(STATUS_GA));
-
-            if (address.equals(destination)) {
-                updateStateAndIgnore(new ChannelUID(getThing().getUID(), CHANNEL_SWITCH), (State) state);
-            }
-        } catch (Exception e) {
-            // do nothing, we move on (either config parameter null, or wrong address format)
-        }
-
-        try {
-            GroupAddress address = new GroupAddress((String) getConfig().get(OPERATING_HOURS_GA));
-
-            if (address.equals(destination)) {
-                updateStateAndIgnore(new ChannelUID(getThing().getUID(), CHANNEL_OPERATING_HOURS), (State) state);
-            }
-        } catch (Exception e) {
-            // do nothing, we move on (either config parameter null, or wrong address format)
-        }
-
-        try {
-            GroupAddress address = new GroupAddress((String) getConfig().get(CURRENT_GA));
-
-            if (address.equals(destination)) {
-                updateStateAndIgnore(new ChannelUID(getThing().getUID(), CHANNEL_CURRENT), (State) state);
-            }
-        } catch (Exception e) {
-            // do nothing, we move on (either config parameter null, or wrong address format)
-        }
-
-        try {
-            GroupAddress address = new GroupAddress((String) getConfig().get(ENERGY_GA));
-
-            if (address.equals(destination)) {
-                updateStateAndIgnore(new ChannelUID(getThing().getUID(), CHANNEL_ENERGY), (State) state);
+                updateState(new ChannelUID(getThing().getUID(), CHANNEL_ENERGY), (State) state);
             }
         } catch (Exception e) {
             // do nothing, we move on (either config parameter null, or wrong address format)
         }
     }
 
-    /*
-     * (non-Javadoc)
-     *
-     * @see org.openhab.binding.knx.handler.KNXBaseThingHandler#getDPT(tuwien.auto.calimero.GroupAddress)
-     */
     @Override
-    String getDPT(GroupAddress destination) {
+    public String getDPT(GroupAddress destination) {
 
         try {
             GroupAddress address = new GroupAddress((String) getConfig().get(SWITCH_GA));
@@ -208,41 +184,16 @@ public class EnergySwitchThingHandler extends SwitchThingHandler {
         return null;
     }
 
-    /*
-     * (non-Javadoc)
-     *
-     * @see org.openhab.binding.knx.handler.KNXBaseThingHandler#intializeDatapoints()
-     */
     @Override
-    void initializeReadAddresses() {
-        if ((Boolean) getConfig().get(READ)) {
-
-            if ((String) getConfig().get(STATUS_GA) != null) {
-                addresses.add((String) getConfig().get(STATUS_GA));
-            }
-            if ((String) getConfig().get(CURRENT_GA) != null) {
-                addresses.add((String) getConfig().get(CURRENT_GA));
-            }
-            if ((String) getConfig().get(OPERATING_HOURS_GA) != null) {
-                addresses.add((String) getConfig().get(OPERATING_HOURS_GA));
-            }
-            if ((String) getConfig().get(ENERGY_GA) != null) {
-                addresses.add((String) getConfig().get(ENERGY_GA));
-            }
-        }
-    }
-
-    @Override
-    String getDPT(ChannelUID channelUID, Type command) {
+    public String getDPT(ChannelUID channelUID, Type command) {
         return ((KNXBridgeBaseThingHandler) getBridge().getHandler()).toDPTid(command.getClass());
     }
 
     @Override
-    String getAddress(ChannelUID channelUID, Type command) {
+    public String getAddress(ChannelUID channelUID, Type command) {
         if (command instanceof OnOffType) {
             return (String) getConfig().get(SWITCH_GA);
         }
-
         return null;
     }
 }

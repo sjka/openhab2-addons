@@ -34,7 +34,7 @@ public class IPBridgeThingHandler extends KNXBridgeBaseThingHandler {
     public static final String IP_CONNECTION_TYPE = "ipConnectionType";
     public static final String LOCAL_IP = "localIp";
     public static final String PORT_NUMBER = "portNumber";
-    public static final String KNX_GROUP_ADDRESS = "localSourceAddr";
+    public static final String LOCAL_SOURCE_ADDRESS = "localSourceAddr";
 
     // the ip connection type for connecting to the KNX bus. Could be either TUNNEL or ROUTING
     private static int ipConnectionType;
@@ -43,7 +43,7 @@ public class IPBridgeThingHandler extends KNXBridgeBaseThingHandler {
     private static String ip;
 
     // the group address used within the KNX bus
-    private static String ga;
+    private static String localsource;
 
     public IPBridgeThingHandler(Thing thing, ItemChannelLinkRegistry itemChannelLinkRegistry) {
         super(thing, itemChannelLinkRegistry);
@@ -58,7 +58,7 @@ public class IPBridgeThingHandler extends KNXBridgeBaseThingHandler {
     public void initialize() {
 
         ip = (String) getConfig().get(IP_ADDRESS);
-        ga = (String) getConfig().get(KNX_GROUP_ADDRESS);
+        localsource = (String) getConfig().get(LOCAL_SOURCE_ADDRESS);
 
         String connectionTypeString = (String) getConfig().get(IP_CONNECTION_TYPE);
         if (StringUtils.isNotBlank(connectionTypeString)) {
@@ -69,8 +69,8 @@ public class IPBridgeThingHandler extends KNXBridgeBaseThingHandler {
                 if (StringUtils.isBlank(ip)) {
                     ip = KNXBindingConstants.DEFAULT_MULTICAST_IP;
                 }
-                if (StringUtils.isBlank(ga)) {
-                    ga = KNXBindingConstants.DEFAULT_KNX_GROUP_ADDRESS;
+                if (StringUtils.isBlank(localsource)) {
+                    localsource = KNXBindingConstants.DEFAULT_LOCAL_SOURCE_ADDRESS;
                 }
             } else {
                 logger.warn("unknown IP connection type '" + connectionTypeString
@@ -110,7 +110,7 @@ public class IPBridgeThingHandler extends KNXBridgeBaseThingHandler {
 
             link = new KNXNetworkLinkIP(ipConnectionType, localEndPoint,
                     new InetSocketAddress(ip, ((BigDecimal) getConfig().get(PORT_NUMBER)).intValue()), false,
-                    new TPSettings(new IndividualAddress((String) getConfig().get(KNX_GROUP_ADDRESS)), true));
+                    new TPSettings(new IndividualAddress(localsource)));
 
         } catch (Exception e) {
             logger.error("Error connecting to KNX bus: {}", e.getMessage());

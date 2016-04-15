@@ -51,7 +51,7 @@ public class SerialBridgeThingHandler extends KNXBridgeBaseThingHandler {
                 }
             }
 
-            link = new KNXNetworkLinkFT12(serialPort, new TPSettings(true));
+            link = new KNXNetworkLinkFT12(serialPort, new TPSettings());
 
         } catch (NoClassDefFoundError e) {
             throw new KNXException(

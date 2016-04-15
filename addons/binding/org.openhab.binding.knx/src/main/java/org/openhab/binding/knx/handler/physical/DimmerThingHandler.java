@@ -1,7 +1,7 @@
 /**
  *
  */
-package org.openhab.binding.knx.handler;
+package org.openhab.binding.knx.handler.physical;
 
 import org.eclipse.smarthome.core.library.types.IncreaseDecreaseType;
 import org.eclipse.smarthome.core.library.types.OnOffType;
@@ -11,6 +11,8 @@ import org.eclipse.smarthome.core.thing.Thing;
 import org.eclipse.smarthome.core.thing.link.ItemChannelLinkRegistry;
 import org.eclipse.smarthome.core.types.State;
 import org.eclipse.smarthome.core.types.Type;
+import org.openhab.binding.knx.handler.KNXBridgeBaseThingHandler;
+import org.openhab.binding.knx.handler.PhysicalActorThingHandler;
 
 import tuwien.auto.calimero.GroupAddress;
 
@@ -20,7 +22,7 @@ import tuwien.auto.calimero.GroupAddress;
  *
  * @author Karel Goderis - Initial contribution
  */
-public class DimmerThingHandler extends KNXBaseThingHandler {
+public class DimmerThingHandler extends PhysicalActorThingHandler {
 
     // List of all Channel ids
     public final static String CHANNEL_DIMMER = "dimmer";
@@ -36,29 +38,79 @@ public class DimmerThingHandler extends KNXBaseThingHandler {
         super(thing, itemChannelLinkRegistry);
     }
 
-    /*
-     * (non-Javadoc)
-     *
-     * @see org.openhab.binding.knx.handler.GAStatusListener#listensTo(tuwien.auto.calimero.GroupAddress)
-     */
     @Override
-    public boolean listensTo(GroupAddress destination) {
+    public void initialize() {
+        super.initialize();
 
         try {
-            GroupAddress address = new GroupAddress((String) getConfig().get(SWITCH_GA));
-
-            if (address.equals(destination)) {
-                return true;
+            if ((String) getConfig().get(SWITCH_GA) != null) {
+                GroupAddress address = new GroupAddress((String) getConfig().get(SWITCH_GA));
+                if (address != null) {
+                    groupAddresses.add(address);
+                }
             }
         } catch (Exception e) {
-            // do nothing, we move on (either config parameter null, or wrong address format)
+            logger.error("An exception occurred while creating a Group Address : '{}'", e.getMessage());
         }
 
         try {
-            GroupAddress address = new GroupAddress((String) getConfig().get(STATUS_GA));
+            if ((String) getConfig().get(STATUS_GA) != null) {
+                GroupAddress address = new GroupAddress((String) getConfig().get(STATUS_GA));
+                if (address != null) {
+                    groupAddresses.add(address);
+                    if ((Boolean) getConfig().get(READ)) {
+                        readAddresses.add(address);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            logger.error("An exception occurred while creating a Group Address : '{}'", e.getMessage());
+        }
 
+        try {
+            if ((String) getConfig().get(DIM_VALUE_GA) != null) {
+                GroupAddress address = new GroupAddress((String) getConfig().get(DIM_VALUE_GA));
+                if (address != null) {
+                    groupAddresses.add(address);
+                    if ((Boolean) getConfig().get(READ)) {
+                        readAddresses.add(address);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            logger.error("An exception occurred while creating a Group Address : '{}'", e.getMessage());
+        }
+
+        try {
+            if ((String) getConfig().get(INCREASE_DECREASE_GA) != null) {
+                GroupAddress address = new GroupAddress((String) getConfig().get(INCREASE_DECREASE_GA));
+                if (address != null) {
+                    groupAddresses.add(address);
+                }
+            }
+        } catch (Exception e) {
+            logger.error("An exception occurred while creating a Group Address : '{}'", e.getMessage());
+        }
+
+        try {
+            if ((String) getConfig().get(POSITION_GA) != null) {
+                GroupAddress address = new GroupAddress((String) getConfig().get(POSITION_GA));
+                if (address != null) {
+                    groupAddresses.add(address);
+                }
+            }
+        } catch (Exception e) {
+            logger.error("An exception occurred while creating a Group Address : '{}'", e.getMessage());
+        }
+    }
+
+    @Override
+    public void processDataReceived(GroupAddress destination, Type state) {
+
+        try {
+            GroupAddress address = new GroupAddress((String) getConfig().get(STATUS_GA));
             if (address.equals(destination)) {
-                return true;
+                updateState(new ChannelUID(getThing().getUID(), CHANNEL_DIMMER), (State) state);
             }
         } catch (Exception e) {
             // do nothing, we move on (either config parameter null, or wrong address format)
@@ -66,59 +118,9 @@ public class DimmerThingHandler extends KNXBaseThingHandler {
 
         try {
             GroupAddress address = new GroupAddress((String) getConfig().get(DIM_VALUE_GA));
-
             if (address.equals(destination)) {
-                return true;
-            }
-        } catch (Exception e) {
-            // do nothing, we move on (either config parameter null, or wrong address format)
-        }
-
-        try {
-            GroupAddress address = new GroupAddress((String) getConfig().get(INCREASE_DECREASE_GA));
-
-            if (address.equals(destination)) {
-                return true;
-            }
-        } catch (Exception e) {
-            // do nothing, we move on (either config parameter null, or wrong address format)
-        }
-
-        try {
-            GroupAddress address = new GroupAddress((String) getConfig().get(POSITION_GA));
-
-            if (address.equals(destination)) {
-                return true;
-            }
-        } catch (Exception e) {
-            // do nothing, we move on (either config parameter null, or wrong address format)
-        }
-
-        return false;
-    }
-
-    /*
-     * (non-Javadoc)
-     *
-     * @see org.openhab.binding.knx.handler.KNXBaseThingHandler#processDataReceived(tuwien.auto.calimero.GroupAddress,
-     * org.eclipse.smarthome.core.types.Type)
-     */
-    @Override
-    void processDataReceived(GroupAddress destination, Type state) {
-
-        try {
-            GroupAddress address = new GroupAddress((String) getConfig().get(STATUS_GA));
-            if (address.equals(destination)) {
-                updateStateAndIgnore(new ChannelUID(getThing().getUID(), CHANNEL_DIMMER), (State) state);
-            }
-        } catch (Exception e) {
-            // do nothing, we move on (either config parameter null, or wrong address format)
-        }
-
-        try {
-            GroupAddress address = new GroupAddress((String) getConfig().get(DIM_VALUE_GA));
-            if (address.equals(destination)) {
-                updateStateAndIgnore(new ChannelUID(getThing().getUID(), CHANNEL_DIMMER), (State) state);
+                updateState(new ChannelUID(getThing().getUID(), CHANNEL_DIMMER), (State) state);
+                ;
             }
         } catch (Exception e) {
             // do nothing, we move on (either config parameter null, or wrong address format)
@@ -126,13 +128,8 @@ public class DimmerThingHandler extends KNXBaseThingHandler {
 
     }
 
-    /*
-     * (non-Javadoc)
-     *
-     * @see org.openhab.binding.knx.handler.KNXBaseThingHandler#getDPT(tuwien.auto.calimero.GroupAddress)
-     */
     @Override
-    String getDPT(GroupAddress destination) {
+    public String getDPT(GroupAddress destination) {
 
         try {
             GroupAddress address = new GroupAddress((String) getConfig().get(SWITCH_GA));
@@ -187,32 +184,13 @@ public class DimmerThingHandler extends KNXBaseThingHandler {
         return null;
     }
 
-    /*
-     * (non-Javadoc)
-     *
-     * @see org.openhab.binding.knx.handler.KNXBaseThingHandler#intializeDatapoints()
-     */
     @Override
-    void initializeReadAddresses() {
-        if ((Boolean) getConfig().get(READ)) {
-
-            if ((String) getConfig().get(STATUS_GA) != null) {
-                addresses.add((String) getConfig().get(STATUS_GA));
-            }
-
-            if ((String) getConfig().get(DIM_VALUE_GA) != null) {
-                addresses.add((String) getConfig().get(DIM_VALUE_GA));
-            }
-        }
-    }
-
-    @Override
-    String getDPT(ChannelUID channelUID, Type command) {
+    public String getDPT(ChannelUID channelUID, Type command) {
         return ((KNXBridgeBaseThingHandler) getBridge().getHandler()).toDPTid(command.getClass());
     }
 
     @Override
-    String getAddress(ChannelUID channelUID, Type command) {
+    public String getAddress(ChannelUID channelUID, Type command) {
 
         if (command instanceof PercentType) {
             return (String) getConfig().get(POSITION_GA);
@@ -230,8 +208,7 @@ public class DimmerThingHandler extends KNXBaseThingHandler {
     }
 
     @Override
-    Type getType(ChannelUID channelUID, Type command) {
-        // TODO Auto-generated method stub
+    public Type getType(ChannelUID channelUID, Type command) {
         return command;
     }
 }

@@ -5,7 +5,7 @@
  * which accompanies this distribution, and is available at
  * http://www.eclipse.org/legal/epl-v10.html
  */
-package org.openhab.binding.knx.handler;
+package org.openhab.binding.knx.handler.physical;
 
 import org.eclipse.smarthome.core.library.types.OnOffType;
 import org.eclipse.smarthome.core.library.types.PercentType;
@@ -33,14 +33,8 @@ public class RollerShutterSwitchThingHandler extends RollerShutterThingHandler {
         super(thing, itemChannelLinkRegistry);
     }
 
-    /*
-     * (non-Javadoc)
-     *
-     * @see org.openhab.binding.knx.handler.KNXBaseThingHandler#processDataReceived(tuwien.auto.calimero.GroupAddress,
-     * org.eclipse.smarthome.core.types.Type)
-     */
     @Override
-    void processDataReceived(GroupAddress destination, Type state) {
+    public void processDataReceived(GroupAddress destination, Type state) {
 
         if (state instanceof PercentType) {
             lastPosition = (PercentType) state;
@@ -49,10 +43,10 @@ public class RollerShutterSwitchThingHandler extends RollerShutterThingHandler {
                 GroupAddress address = new GroupAddress((String) getConfig().get(POSITION_STATUS_GA));
                 if (address.equals(destination)) {
                     if (((PercentType) state).intValue() == 100) {
-                        updateStateAndIgnore(new ChannelUID(getThing().getUID(), CHANNEL_SWITCH), OnOffType.ON);
+                        updateState(new ChannelUID(getThing().getUID(), CHANNEL_SWITCH), OnOffType.ON);
                     }
                     if (((PercentType) state).intValue() == 0) {
-                        updateStateAndIgnore(new ChannelUID(getThing().getUID(), CHANNEL_SWITCH), OnOffType.OFF);
+                        updateState(new ChannelUID(getThing().getUID(), CHANNEL_SWITCH), OnOffType.OFF);
                     }
                 }
             } catch (Exception e) {
@@ -66,7 +60,7 @@ public class RollerShutterSwitchThingHandler extends RollerShutterThingHandler {
     }
 
     @Override
-    String getDPT(ChannelUID channelUID, Type command) {
+    public String getDPT(ChannelUID channelUID, Type command) {
 
         if (command instanceof OnOffType) {
 
@@ -87,7 +81,7 @@ public class RollerShutterSwitchThingHandler extends RollerShutterThingHandler {
     }
 
     @Override
-    String getAddress(ChannelUID channelUID, Type command) {
+    public String getAddress(ChannelUID channelUID, Type command) {
 
         if (command instanceof OnOffType) {
             return (String) getConfig().get(RollerShutterThingHandler.POSITION_GA);
@@ -97,7 +91,7 @@ public class RollerShutterSwitchThingHandler extends RollerShutterThingHandler {
     }
 
     @Override
-    Type getType(ChannelUID channelUID, Type command) {
+    public Type getType(ChannelUID channelUID, Type command) {
 
         if (command instanceof OnOffType) {
             PercentType newCommand = null;
@@ -114,5 +108,4 @@ public class RollerShutterSwitchThingHandler extends RollerShutterThingHandler {
 
         return super.getType(channelUID, command);
     }
-
 }

@@ -19,7 +19,12 @@
 		</channels>
 
 		<config-description>
-			<parameter name="upDownGA" type="text">
+			<parameter name="address" type="text">
+                <label>Address</label>
+                <description>The individual address in area.line.device notation</description>
+                <required>true</required>
+            </parameter>
+            <parameter name="upDownGA" type="text">
 				<label>Address</label>
 				<description>The group address in x/y/z notation to move the shutter in the DOWN or UP direction</description>
 				<required>false</required>

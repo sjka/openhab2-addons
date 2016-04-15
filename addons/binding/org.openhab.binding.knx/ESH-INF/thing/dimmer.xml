@@ -19,6 +19,11 @@
 		</channels>
 
 		<config-description>
+		    <parameter name="address" type="text">
+                <label>Address</label>
+                <description>The individual address in area.line.device notation</description>
+                <required>true</required>
+            </parameter>
 			<parameter name="switchGA" type="text">
 				<label>Address</label>
 				<description>The group address in x/y/z notation to toggle the dimmer on or off</description>
