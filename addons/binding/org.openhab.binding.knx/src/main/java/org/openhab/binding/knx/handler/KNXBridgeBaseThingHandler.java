@@ -92,13 +92,6 @@ public abstract class KNXBridgeBaseThingHandler extends BaseThingHandler impleme
 
     protected Logger logger = LoggerFactory.getLogger(KNXBridgeBaseThingHandler.class);
 
-    // TODO : Discuss how to handle duplicate events on the KNx bus. Either we don't care, and it is up to the user to
-    // define item-channel links in a consistent matter, or we try to manage this ourselves. One option to improve
-    // things is to take over the (R)ead, (W)rite and (T)ransmit flags of ETS4 in order to prevent writing values to
-    // GA's that have no W flag defined in ETS4 and so forth
-    // used to store events that we have sent ourselves; we need to remember them for not reacting to them
-    // private static List<String> ignoreEventList = new ArrayList<String>();
-
     private List<GroupAddressListener> groupAddressListeners = new CopyOnWriteArrayList<>();
     private List<IndividualAddressListener> individualAddressListeners = new CopyOnWriteArrayList<>();
     private List<KNXBridgeListener> knxBridgeListeners = new CopyOnWriteArrayList<>();
@@ -565,39 +558,14 @@ public abstract class KNXBridgeBaseThingHandler extends BaseThingHandler impleme
             Channel channel = this.getThing().getChannel(channelUID.getId());
             if (channel != null) {
                 Configuration channelConfiguration = channel.getConfiguration();
-                // if (ignoreEventList.contains(channelUID.toString() + command.toString())) {
-                // logger.trace("Ooops... this event should be ignored");
-                // ignoreEventList.remove(channelUID.toString() + command.toString());
-                // } else {
                 this.writeToKNX((String) channelConfiguration.get(ADDRESS), (String) channelConfiguration.get(DPT),
                         command);
-                // }
             } else {
                 logger.error("No channel is associated with channelUID {}", channelUID);
             }
         }
 
     }
-
-    // @Override
-    // public void handleUpdate(ChannelUID channelUID, State newState) {
-    //
-    // if (channelUID != null) {
-    // Channel channel = this.getThing().getChannel(channelUID.getId());
-    // if (channel != null) {
-    // Configuration channelConfiguration = channel.getConfiguration();
-    // //
-    // // if (ignoreEventList.contains(channelUID.toString() + newState.toString())) {
-    // // logger.trace("Ooops... this event should be ignored");
-    // // ignoreEventList.remove(channelUID.toString() + newState.toString());
-    // // } else {
-    // this.writeToKNX((String) channelConfiguration.get(ADDRESS), (String) channelConfiguration.get(DPT),
-    // newState);
-    // // }
-    // }
-    // }
-    //
-    // }
 
     public class BusRunnable implements Runnable {
 
@@ -969,24 +937,6 @@ public abstract class KNXBridgeBaseThingHandler extends BaseThingHandler impleme
                 Type type = getType(datapoint, asdu);
 
                 if (type != null) {
-                    // we need to make sure that we won't send out this event to
-                    // the knx bus again, when receiving it on the openHAB bus
-
-                    // Set<String> itemSet = this.getLinkedItems(channelUID.getId());
-                    //
-                    // for (String anItem : itemSet) {
-                    // logger.trace("The channel '{}' is bound to item '{}' ", channelUID, anItem);
-                    // for (ChannelUID cUID : itemChannelLinkRegistry.getBoundChannels(anItem)) {
-                    // logger.trace("Item '{}' has a channel with id '{}'", anItem, cUID);
-                    // if (cUID.getBindingId().equals(KNXBindingConstants.BINDING_ID)
-                    // && !cUID.toString().equals(channelUID.toString())) {
-                    // logger.trace("Added event (channel='{}', type='{}') to the ignore event list", cUID,
-                    // type.toString());
-                    // ignoreEventList.add(cUID.toString() + type.toString());
-                    // }
-                    // }
-                    // }
-
                     if (type instanceof State) {
                         updateState(channelUID, (State) type);
                     } else {
