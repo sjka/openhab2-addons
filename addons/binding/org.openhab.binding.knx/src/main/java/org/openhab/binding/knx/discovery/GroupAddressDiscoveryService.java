@@ -24,15 +24,15 @@ import tuwien.auto.calimero.IndividualAddress;
 import com.google.common.collect.Sets;
 
 /**
- * The {@link GADiscoveryService} class provides a discovery
+ * The {@link GroupAddressDiscoveryService} class provides a discovery
  * mechanism for KNX Group Addresses
  * 
  * @author  Karel Goderis - Initial contribution
  */
-public class GADiscoveryService extends AbstractDiscoveryService implements KNXBusListener {
+public class GroupAddressDiscoveryService extends AbstractDiscoveryService implements KNXBusListener {
 
 	public final static Set<ThingTypeUID> SUPPORTED_THING_TYPES_UIDS = Sets.newHashSet(
-			KNXBindingConstants.THING_TYPE_GA);
+			KNXBindingConstants.THING_TYPE_GROUPADDRESS);
 
 	private final static int SEARCH_TIME = 180;
 	private boolean searchOngoing = false;
@@ -41,7 +41,7 @@ public class GADiscoveryService extends AbstractDiscoveryService implements KNXB
 	private KNXBridgeBaseThingHandler bridgeHandler;
 
 
-	public GADiscoveryService(KNXBridgeBaseThingHandler bridgeHandler) throws IllegalArgumentException {
+	public GroupAddressDiscoveryService(KNXBridgeBaseThingHandler bridgeHandler) throws IllegalArgumentException {
 		super(SUPPORTED_THING_TYPES_UIDS,SEARCH_TIME,false);
 		this.bridgeHandler = bridgeHandler;
 	}
@@ -69,7 +69,7 @@ public class GADiscoveryService extends AbstractDiscoveryService implements KNXB
 			byte[] asdu) {
 		if(searchOngoing) {
 			ThingUID bridgeUID = bridgeHandler.getThing().getUID();
-			ThingUID thingUID = new ThingUID(KNXBindingConstants.THING_TYPE_GA, destination.toString().replaceAll("/", "_"), bridgeUID.getId());
+			ThingUID thingUID = new ThingUID(KNXBindingConstants.THING_TYPE_GROUPADDRESS, destination.toString().replaceAll("/", "_"), bridgeUID.getId());
 
 			Map<String, Object> properties = new HashMap<>(1);
 			properties.put(GroupAddressThingHandler.ADDRESS, destination.toString());

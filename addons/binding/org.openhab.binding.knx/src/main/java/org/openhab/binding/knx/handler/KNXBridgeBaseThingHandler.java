@@ -529,7 +529,7 @@ public abstract class KNXBridgeBaseThingHandler extends BaseThingHandler impleme
         return result;
     }
 
-    public boolean unregisterKNXBridgeListener(GroupAddressListener listener) {
+    public boolean unregisterKNXBridgeListener(KNXBridgeListener listener) {
         if (listener == null) {
             throw new NullPointerException("It's not allowed to pass a null KNXBridgeListener.");
         }
@@ -1133,6 +1133,26 @@ public abstract class KNXBridgeBaseThingHandler extends BaseThingHandler impleme
         } catch (final Exception e) {
             logger.error("An exception occurred while trying to read a device property '{}' : {}", address.toString(),
                     e.getMessage());
+        }
+
+        return null;
+    }
+
+    public IndividualAddress[] scanNetworkDevices(final int area, final int line) {
+        try {
+            return mp.scanNetworkDevices(area, line);
+        } catch (final Exception e) {
+            logger.error("An exception occurred while scanning the KNX bus : {}", e.getMessage());
+        }
+
+        return null;
+    }
+
+    public IndividualAddress[] scanNetworkRouters() {
+        try {
+            return mp.scanNetworkRouters();
+        } catch (final Exception e) {
+            logger.error("An exception occurred while scanning the KNX bus : {}", e.getMessage());
         }
 
         return null;

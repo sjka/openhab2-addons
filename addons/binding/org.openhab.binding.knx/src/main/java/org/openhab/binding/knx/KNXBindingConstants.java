@@ -33,7 +33,8 @@ public class KNXBindingConstants {
     // List of all Thing Type UIDs
     public final static ThingTypeUID THING_TYPE_IP_BRIDGE = new ThingTypeUID(BINDING_ID, "ip");
     public final static ThingTypeUID THING_TYPE_SERIAL_BRIDGE = new ThingTypeUID(BINDING_ID, "serial");
-    public final static ThingTypeUID THING_TYPE_GA = new ThingTypeUID(BINDING_ID, "ga");
+    public final static ThingTypeUID THING_TYPE_GROUPADDRESS = new ThingTypeUID(BINDING_ID, "ga");
+    public final static ThingTypeUID THING_TYPE_GENERIC = new ThingTypeUID(BINDING_ID, "generic");
     public final static ThingTypeUID THING_TYPE_SWITCH = new ThingTypeUID(BINDING_ID, "switch");
     public final static ThingTypeUID THING_TYPE_DIMMER = new ThingTypeUID(BINDING_ID, "dimmer");
     public final static ThingTypeUID THING_TYPE_ENERGY_SWITCH = new ThingTypeUID(BINDING_ID, "energyswitch");
