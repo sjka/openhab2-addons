@@ -1107,5 +1107,4 @@ public abstract class KNXBridgeBaseThingHandler extends BaseThingHandler impleme
 
         return null;
     }
-
 }

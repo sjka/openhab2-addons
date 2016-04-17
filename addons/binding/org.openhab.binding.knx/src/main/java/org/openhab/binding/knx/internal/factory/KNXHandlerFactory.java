@@ -161,7 +161,7 @@ public class KNXHandlerFactory extends BaseThingHandlerFactory {
 
     private ThingUID getGAThingUID(ThingTypeUID thingTypeUID, ThingUID thingUID, Configuration configuration,
             ThingUID bridgeUID) {
-        String address = ((String) configuration.get(GroupAddressThingHandler.ADDRESS)).replaceAll("/", "_");
+        String address = ((String) configuration.get(GroupAddressThingHandler.ADDRESS)).replace("/", "_");
 
         if (thingUID == null) {
             thingUID = new ThingUID(thingTypeUID, address, bridgeUID.getId());
@@ -171,7 +171,7 @@ public class KNXHandlerFactory extends BaseThingHandlerFactory {
 
     private ThingUID getGenericThingUID(ThingTypeUID thingTypeUID, ThingUID thingUID, Configuration configuration,
             ThingUID bridgeUID) {
-        String address = ((String) configuration.get(PhysicalActorThingHandler.ADDRESS)).replaceAll(".", "_");
+        String address = ((String) configuration.get(PhysicalActorThingHandler.ADDRESS)).replace(".", "_");
 
         if (thingUID == null) {
             thingUID = new ThingUID(thingTypeUID, address, bridgeUID.getId());
@@ -189,7 +189,7 @@ public class KNXHandlerFactory extends BaseThingHandlerFactory {
         }
 
         if (address != null) {
-            address = address.replaceAll("/", "_");
+            address = address.replace("/", "_");
         }
 
         if (thingUID == null && address != null) {
@@ -216,7 +216,7 @@ public class KNXHandlerFactory extends BaseThingHandlerFactory {
         }
 
         if (address != null) {
-            address = address.replaceAll("/", "_");
+            address = address.replace("/", "_");
         }
 
         if (thingUID == null && address != null) {
