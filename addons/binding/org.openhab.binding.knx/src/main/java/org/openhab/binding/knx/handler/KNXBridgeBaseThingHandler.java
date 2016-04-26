@@ -7,13 +7,14 @@
  */
 package org.openhab.binding.knx.handler;
 
-import java.io.ByteArrayOutputStream;
 import java.math.BigDecimal;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledFuture;
@@ -52,10 +53,14 @@ import tuwien.auto.calimero.datapoint.Datapoint;
 import tuwien.auto.calimero.exception.KNXException;
 import tuwien.auto.calimero.exception.KNXFormatException;
 import tuwien.auto.calimero.exception.KNXIllegalArgumentException;
+import tuwien.auto.calimero.exception.KNXRemoteException;
+import tuwien.auto.calimero.exception.KNXTimeoutException;
+import tuwien.auto.calimero.link.KNXLinkClosedException;
 import tuwien.auto.calimero.link.KNXNetworkLink;
 import tuwien.auto.calimero.link.NetworkLinkListener;
 import tuwien.auto.calimero.log.LogManager;
 import tuwien.auto.calimero.mgmt.Destination;
+import tuwien.auto.calimero.mgmt.KNXDisconnectException;
 import tuwien.auto.calimero.mgmt.ManagementClient;
 import tuwien.auto.calimero.mgmt.ManagementClientImpl;
 import tuwien.auto.calimero.mgmt.ManagementProcedures;
@@ -98,10 +103,12 @@ public abstract class KNXBridgeBaseThingHandler extends BaseThingHandler impleme
     private List<KNXBusListener> knxBusListeners = new CopyOnWriteArrayList<>();
     static protected Collection<KNXTypeMapper> typeMappers = new HashSet<KNXTypeMapper>();
     private LinkedBlockingQueue<RetryDatapoint> readDatapoints = new LinkedBlockingQueue<RetryDatapoint>();
+    protected ConcurrentHashMap<IndividualAddress, Destination> destinations = new ConcurrentHashMap<IndividualAddress, Destination>();
 
     protected ItemChannelLinkRegistry itemChannelLinkRegistry;
     private ProcessCommunicator pc = null;
     private ProcessListenerEx pl = null;
+    private NetworkLinkListener nll = null;
     private ManagementProcedures mp;
     private ManagementClient mc;
     protected KNXNetworkLink link;
@@ -175,7 +182,28 @@ public abstract class KNXBridgeBaseThingHandler extends BaseThingHandler impleme
         try {
             shutdown = false;
 
-            NetworkLinkListener linkListener = new NetworkLinkListener() {
+            if (mp != null) {
+                mp.detach();
+            }
+
+            if (mc != null) {
+                mc.detach();
+            }
+
+            if (pc != null) {
+                if (pl != null) {
+                    pc.removeProcessListener(pl);
+                }
+                pc.detach();
+            }
+
+            if (link != null && link.isOpen()) {
+                link.close();
+            }
+
+            establishConnection();
+
+            nll = new NetworkLinkListener() {
                 @Override
                 public void linkClosed(CloseEvent e) {
                     // if the link is lost, we want to reconnect immediately
@@ -298,25 +326,6 @@ public abstract class KNXBridgeBaseThingHandler extends BaseThingHandler impleme
                 }
             };
 
-            if (link != null && link.isOpen()) {
-                link.close();
-            }
-
-            establishConnection();
-
-            if (link != null) {
-                mp = new ManagementProceduresImpl(link);
-                mc = new ManagementClientImpl(link);
-                link.addLinkListener(linkListener);
-            }
-
-            if (pc != null) {
-                if (pl != null) {
-                    pc.removeProcessListener(pl);
-                }
-                pc.detach();
-            }
-
             pl = new ProcessListenerEx() {
 
                 @Override
@@ -341,9 +350,18 @@ public abstract class KNXBridgeBaseThingHandler extends BaseThingHandler impleme
 
             };
 
-            pc = new ProcessCommunicatorImpl(link);
-            pc.setResponseTimeout(((BigDecimal) getConfig().get(RESPONSE_TIME_OUT)).intValue() / 1000);
-            pc.addProcessListener(pl);
+            if (link != null) {
+                mp = new ManagementProceduresImpl(link);
+
+                mc = new ManagementClientImpl(link);
+                mc.setResponseTimeout((((BigDecimal) getConfig().get(RESPONSE_TIME_OUT)).intValue() / 1000));
+
+                pc = new ProcessCommunicatorImpl(link);
+                pc.setResponseTimeout(((BigDecimal) getConfig().get(RESPONSE_TIME_OUT)).intValue() / 1000);
+                pc.addProcessListener(pl);
+
+                link.addLinkListener(nll);
+            }
 
             onConnectionResumed();
 
@@ -689,7 +707,7 @@ public abstract class KNXBridgeBaseThingHandler extends BaseThingHandler impleme
                 return;
             }
 
-            logger.debug("Received a Group Write telegram from '{}' for destination '{}'", e.getSourceAddr(),
+            logger.trace("Received a Group Write telegram from '{}' for destination '{}'", e.getSourceAddr(),
                     destination);
 
             for (IndividualAddressListener listener : individualAddressListeners) {
@@ -741,7 +759,7 @@ public abstract class KNXBridgeBaseThingHandler extends BaseThingHandler impleme
                 return;
             }
 
-            logger.debug("Received a Group Read telegram from '{}' for destination '{}'", e.getSourceAddr(),
+            logger.trace("Received a Group Read telegram from '{}' for destination '{}'", e.getSourceAddr(),
                     destination);
 
             for (IndividualAddressListener listener : individualAddressListeners) {
@@ -793,7 +811,7 @@ public abstract class KNXBridgeBaseThingHandler extends BaseThingHandler impleme
                 return;
             }
 
-            logger.debug("Received a Group Read telegram from '{}' for destination '{}'", e.getSourceAddr(),
+            logger.trace("Received a Group Read telegram from '{}' for destination '{}'", e.getSourceAddr(),
                     destination);
 
             for (IndividualAddressListener listener : individualAddressListeners) {
@@ -1019,7 +1037,7 @@ public abstract class KNXBridgeBaseThingHandler extends BaseThingHandler impleme
         }
     }
 
-    public boolean isReachable(IndividualAddress address) {
+    synchronized public boolean isReachable(IndividualAddress address) {
         if (mp != null) {
             try {
                 return mp.isAddressOccupied(address);
@@ -1028,67 +1046,22 @@ public abstract class KNXBridgeBaseThingHandler extends BaseThingHandler impleme
                         e.getMessage());
             }
         }
-
         return false;
     }
 
-    public byte[] readDeviceDescription(IndividualAddress address, int descType) {
-
-        try {
-            if (address != null) {
-                Destination destination = mc.createDestination(address, true);
-                byte[] result = mc.readDeviceDesc(destination, descType);
-                destination.destroy();
-                return result;
+    synchronized public void resetNetworkDevice(IndividualAddress address) {
+        if (address != null) {
+            Destination destination = mc.createDestination(address, true);
+            try {
+                mc.restart(destination);
+            } catch (KNXTimeoutException | KNXLinkClosedException e) {
+                logger.error("An exception occurred while resetting the device with address {} : {}", address,
+                        e.getMessage());
             }
-        } catch (Exception e) {
-            logger.error("An exception occurred while trying to reach address '{}' : {}", address.toString(),
-                    e.getMessage());
         }
-
-        return null;
     }
 
-    public byte[] readDeviceMemory(IndividualAddress address, int startAddress, int bytes, boolean hex) {
-
-        try {
-            if (address != null) {
-                Destination destination = mc.createDestination(address, true);
-                byte[] result = mc.readMemory(destination, startAddress, bytes);
-                destination.destroy();
-                return result;
-            }
-        } catch (Exception e) {
-            logger.error("An exception occurred while trying to reach address '{}' : {}", address.toString(),
-                    e.getMessage());
-        }
-
-        return null;
-
-    }
-
-    public byte[] readDeviceProperties(IndividualAddress address, final int interfaceObjectIndex, final int propertyId,
-            final int start, final int elements) throws InterruptedException {
-        try {
-            if (address != null) {
-                Destination destination = mc.createDestination(address, true);
-                final ByteArrayOutputStream res = new ByteArrayOutputStream();
-                for (int i = start; i < start + elements; i++) {
-                    final byte[] data = mc.readProperty(destination, interfaceObjectIndex, propertyId, i, 1);
-                    res.write(data, 0, data.length);
-                }
-                destination.destroy();
-                return res.toByteArray();
-            }
-        } catch (final Exception e) {
-            logger.error("An exception occurred while trying to read a device property '{}' : {}", address.toString(),
-                    e.getMessage());
-        }
-
-        return null;
-    }
-
-    public IndividualAddress[] scanNetworkDevices(final int area, final int line) {
+    synchronized public IndividualAddress[] scanNetworkDevices(final int area, final int line) {
         try {
             return mp.scanNetworkDevices(area, line);
         } catch (final Exception e) {
@@ -1098,13 +1071,142 @@ public abstract class KNXBridgeBaseThingHandler extends BaseThingHandler impleme
         return null;
     }
 
-    public IndividualAddress[] scanNetworkRouters() {
+    synchronized public IndividualAddress[] scanNetworkRouters() {
         try {
             return mp.scanNetworkRouters();
         } catch (final Exception e) {
             logger.error("An exception occurred while scanning the KNX bus : {}", e.getMessage());
         }
-
         return null;
     }
+
+    synchronized public byte[] readDeviceDescription(IndividualAddress address, int descType, boolean authenticate,
+            long timeout) {
+        Destination destination = null;
+
+        boolean success = false;
+        byte[] result = null;
+        long now = System.currentTimeMillis();
+
+        while (!success && (System.currentTimeMillis() - now) < timeout) {
+
+            try {
+
+                logger.debug("Reading Device Description of {} ", address);
+
+                destination = mc.createDestination(address, true);
+
+                if (authenticate) {
+                    int access = mc.authorize(destination, (ByteBuffer.allocate(4)).put((byte) 0xFF).put((byte) 0xFF)
+                            .put((byte) 0xFF).put((byte) 0xFF).array());
+                }
+
+                result = mc.readDeviceDesc(destination, descType);
+                logger.debug("Reading Device Description of {} yields {} bytes", address,
+                        result == null ? null : result.length);
+
+                success = true;
+
+            } catch (Exception e) {
+                logger.error("An exception occurred while trying to read the device description for address '{}' : {}",
+                        address.toString(), e.getMessage());
+            } finally {
+                if (destination != null) {
+                    destination.destroy();
+                }
+            }
+        }
+        return result;
+    }
+
+    synchronized public byte[] readDeviceMemory(IndividualAddress address, int startAddress, int bytes,
+            boolean authenticate, long timeout) {
+
+        boolean success = false;
+        byte[] result = null;
+        long now = System.currentTimeMillis();
+
+        while (!success && (System.currentTimeMillis() - now) < timeout) {
+            Destination destination = null;
+            try {
+
+                logger.debug("Reading {} bytes at memory location {} of device {}",
+                        new Object[] { bytes, startAddress, address });
+
+                destination = mc.createDestination(address, true);
+
+                if (authenticate) {
+                    int access = mc.authorize(destination, (ByteBuffer.allocate(4)).put((byte) 0xFF).put((byte) 0xFF)
+                            .put((byte) 0xFF).put((byte) 0xFF).array());
+                }
+
+                result = mc.readMemory(destination, startAddress, bytes);
+                logger.debug("Reading {} bytes at memory location {} of device {} yields {} bytes",
+                        new Object[] { bytes, startAddress, address, result == null ? null : result.length });
+
+                success = true;
+            } catch (KNXTimeoutException e) {
+                logger.error("An KNXTimeoutException occurred while trying to read the memory for address '{}' : {}",
+                        address.toString(), e.getMessage());
+            } catch (KNXRemoteException e) {
+                logger.error("An KNXRemoteException occurred while trying to read the memory for '{}' : {}",
+                        address.toString(), e.getMessage());
+            } catch (KNXDisconnectException e) {
+                logger.error("An KNXDisconnectException occurred while trying to read the memory for '{}' : {}",
+                        address.toString(), e.getMessage());
+            } catch (KNXLinkClosedException e) {
+                logger.error("An KNXLinkClosedException occurred while trying to read the memory for '{}' : {}",
+                        address.toString(), e.getMessage());
+            } catch (KNXException e) {
+                logger.error("An KNXException occurred while trying to read the memory for '{}' : {}",
+                        address.toString(), e.getMessage());
+            } catch (InterruptedException e) {
+                logger.error("An exception occurred while trying to read the memory for '{}' : {}", address.toString(),
+                        e.getMessage());
+                e.printStackTrace();
+            } finally {
+                if (destination != null) {
+                    destination.destroy();
+                }
+            }
+        }
+        return result;
+    }
+
+    synchronized public byte[] readDeviceProperties(IndividualAddress address, final int interfaceObjectIndex,
+            final int propertyId, final int start, final int elements, boolean authenticate, long timeout) {
+
+        boolean success = false;
+        byte[] result = null;
+        long now = System.currentTimeMillis();
+
+        while (!success && (System.currentTimeMillis() - now) < timeout) {
+            Destination destination = null;
+            try {
+                logger.debug("Reading device property {} at index {} for {}", new Object[] { propertyId,
+                        interfaceObjectIndex, address, result == null ? null : result.length });
+
+                destination = mc.createDestination(address, true);
+
+                if (authenticate) {
+                    int access = mc.authorize(destination, (ByteBuffer.allocate(4)).put((byte) 0xFF).put((byte) 0xFF)
+                            .put((byte) 0xFF).put((byte) 0xFF).array());
+                }
+
+                result = mc.readProperty(destination, interfaceObjectIndex, propertyId, start, elements);
+
+                logger.debug("Reading device property {} at index {} for {} yields {} bytes", new Object[] { propertyId,
+                        interfaceObjectIndex, address, result == null ? null : result.length });
+                success = true;
+            } catch (final Exception e) {
+                logger.error("An exception occurred while reading a device property : {}", e.getMessage());
+            } finally {
+                if (destination != null) {
+                    destination.destroy();
+                }
+            }
+        }
+        return result;
+    }
+
 }
