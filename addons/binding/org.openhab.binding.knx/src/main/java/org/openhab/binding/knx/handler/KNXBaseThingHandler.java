@@ -41,6 +41,7 @@ public abstract class KNXBaseThingHandler extends BaseThingHandler
     protected Logger logger = LoggerFactory.getLogger(KNXBaseThingHandler.class);
 
     protected ItemChannelLinkRegistry itemChannelLinkRegistry;
+    protected KNXBridgeBaseThingHandler bridgeHandler;
 
     // group addresses the Thing is monitoring
     protected List<GroupAddress> groupAddresses = new ArrayList<GroupAddress>();
@@ -61,6 +62,7 @@ public abstract class KNXBaseThingHandler extends BaseThingHandler
     public void bridgeHandlerInitialized(ThingHandler bridgeHandler, Bridge bridge) {
 
         if (bridgeHandler != null && bridge != null) {
+            this.bridgeHandler = (KNXBridgeBaseThingHandler) bridgeHandler;
             ((KNXBridgeBaseThingHandler) bridgeHandler).registerGroupAddressListener(this);
             ((KNXBridgeBaseThingHandler) bridgeHandler).registerKNXBridgeListener(this);
             if (bridge.getStatus() == ThingStatus.OFFLINE) {
@@ -100,9 +102,7 @@ public abstract class KNXBaseThingHandler extends BaseThingHandler
     @Override
     public void handleCommand(ChannelUID channelUID, Command command) {
 
-        KNXBridgeBaseThingHandler bridge = (KNXBridgeBaseThingHandler) getBridge().getHandler();
-
-        if (bridge == null) {
+        if (bridgeHandler == null) {
             logger.warn("KNX bridge handler not found. Cannot handle command without bridge.");
             return;
         }
@@ -111,7 +111,7 @@ public abstract class KNXBaseThingHandler extends BaseThingHandler
         String address = getAddress(channelUID, command);
         Type type = getType(channelUID, command);
 
-        bridge.writeToKNX(address, dpt, type);
+        bridgeHandler.writeToKNX(address, dpt, type);
     }
 
     @Override

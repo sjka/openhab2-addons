@@ -45,6 +45,7 @@ public class KNXBindingConstants {
     // List of all Channel ids
     public final static String ERRORS_STARTUP = "errorsall";
     public final static String ERRORS_INTERVAL = "errors5min";
+    public final static String CHANNEL_RESET = "reset";
 
     // List of Property ids
     public final static String FIRMWARE_TYPE = "firmwaretype";

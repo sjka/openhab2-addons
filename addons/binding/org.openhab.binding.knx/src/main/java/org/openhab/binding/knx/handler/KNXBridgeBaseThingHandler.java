@@ -848,7 +848,7 @@ public abstract class KNXBridgeBaseThingHandler extends BaseThingHandler impleme
 
     public void writeToKNX(String address, String dpt, Type value) {
 
-        if (dpt != null && address != null) {
+        if (dpt != null && address != null && value != null) {
 
             logger.trace("Writing a KNX telegram to '{}' with dpt '{}'", address, dpt);
 
@@ -868,7 +868,7 @@ public abstract class KNXBridgeBaseThingHandler extends BaseThingHandler impleme
 
         ProcessCommunicator pc = getCommunicator();
 
-        if (pc != null) {
+        if (pc != null && datapoint != null && value != null) {
             try {
                 String dpt = toDPTValue(value, datapoint.getDPT());
                 if (dpt != null) {
@@ -1049,7 +1049,7 @@ public abstract class KNXBridgeBaseThingHandler extends BaseThingHandler impleme
         return false;
     }
 
-    synchronized public void resetNetworkDevice(IndividualAddress address) {
+    synchronized public void restartNetworkDevice(IndividualAddress address) {
         if (address != null) {
             Destination destination = mc.createDestination(address, true);
             try {
