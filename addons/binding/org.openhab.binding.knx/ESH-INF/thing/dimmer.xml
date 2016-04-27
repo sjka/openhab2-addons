@@ -22,7 +22,7 @@
 		    <parameter name="address" type="text">
                 <label>Address</label>
                 <description>The individual address in area.line.device notation</description>
-                <required>true</required>
+                <required>false</required>
             </parameter>
 			<parameter name="switchGA" type="text">
 				<label>Address</label>

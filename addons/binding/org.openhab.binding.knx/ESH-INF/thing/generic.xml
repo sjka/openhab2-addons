@@ -18,7 +18,7 @@
 			<parameter name="address" type="text">
 				<label>Address</label>
 				<description>The individual address in x.y.z notation</description>
-				<required>true</required>
+				<required>false</required>
 			</parameter>
 		</config-description>
 	</thing-type>

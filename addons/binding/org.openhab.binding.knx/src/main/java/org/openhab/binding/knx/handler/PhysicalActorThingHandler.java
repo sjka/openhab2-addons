@@ -91,6 +91,8 @@ public abstract class PhysicalActorThingHandler extends KNXBaseThingHandler {
                     pollingJob = scheduler.scheduleWithFixedDelay(pollingRunnable, Math.round(pollingInterval / 4),
                             pollingInterval, TimeUnit.MILLISECONDS);
                 }
+            } else {
+                updateStatus(ThingStatus.ONLINE);
             }
         } catch (Exception e) {
             logger.error("An exception occurred while setting the Individual Address : '{}'", e.getMessage());
