@@ -155,8 +155,11 @@ public abstract class PhysicalActorThingHandler extends KNXBaseThingHandler {
             }
         }
 
-        super.handleCommand(channelUID, command);
+        String dpt = getDPT(channelUID, command);
+        String address = getAddress(channelUID, command);
+        Type type = getType(channelUID, command);
 
+        bridgeHandler.writeToKNX(address, dpt, type);
     }
 
     @Override
@@ -205,6 +208,14 @@ public abstract class PhysicalActorThingHandler extends KNXBaseThingHandler {
     }
 
     abstract public void processDataReceived(GroupAddress destination, Type state);
+
+    abstract public String getDPT(GroupAddress destination);
+
+    abstract public String getDPT(ChannelUID channelUID, Type command);
+
+    abstract public String getAddress(ChannelUID channelUID, Type command);
+
+    abstract public Type getType(ChannelUID channelUID, Type command);
 
     private Runnable readRunnable = new Runnable() {
         @Override

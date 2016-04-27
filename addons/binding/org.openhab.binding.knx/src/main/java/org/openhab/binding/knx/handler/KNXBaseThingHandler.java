@@ -11,15 +11,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.eclipse.smarthome.core.thing.Bridge;
-import org.eclipse.smarthome.core.thing.ChannelUID;
 import org.eclipse.smarthome.core.thing.Thing;
 import org.eclipse.smarthome.core.thing.ThingStatus;
 import org.eclipse.smarthome.core.thing.ThingStatusDetail;
 import org.eclipse.smarthome.core.thing.binding.BaseThingHandler;
 import org.eclipse.smarthome.core.thing.binding.ThingHandler;
 import org.eclipse.smarthome.core.thing.link.ItemChannelLinkRegistry;
-import org.eclipse.smarthome.core.types.Command;
-import org.eclipse.smarthome.core.types.Type;
 import org.openhab.binding.knx.GroupAddressListener;
 import org.openhab.binding.knx.IndividualAddressListener;
 import org.openhab.binding.knx.KNXBridgeListener;
@@ -100,21 +97,6 @@ public abstract class KNXBaseThingHandler extends BaseThingHandler
     }
 
     @Override
-    public void handleCommand(ChannelUID channelUID, Command command) {
-
-        if (bridgeHandler == null) {
-            logger.warn("KNX bridge handler not found. Cannot handle command without bridge.");
-            return;
-        }
-
-        String dpt = getDPT(channelUID, command);
-        String address = getAddress(channelUID, command);
-        Type type = getType(channelUID, command);
-
-        bridgeHandler.writeToKNX(address, dpt, type);
-    }
-
-    @Override
     public boolean listensTo(IndividualAddress source) {
         if (address != null) {
             return address.equals(source);
@@ -128,11 +110,4 @@ public abstract class KNXBaseThingHandler extends BaseThingHandler
         return groupAddresses.contains(destination);
     }
 
-    abstract public String getDPT(GroupAddress destination);
-
-    abstract public String getDPT(ChannelUID channelUID, Type command);
-
-    abstract public String getAddress(ChannelUID channelUID, Type command);
-
-    abstract public Type getType(ChannelUID channelUID, Type command);
 }
