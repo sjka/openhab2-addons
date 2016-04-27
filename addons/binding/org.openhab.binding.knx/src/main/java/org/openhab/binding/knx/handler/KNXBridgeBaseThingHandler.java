@@ -754,13 +754,11 @@ public abstract class KNXBridgeBaseThingHandler extends BaseThingHandler impleme
         try {
             GroupAddress destination = e.getDestination();
             IndividualAddress source = e.getSourceAddr();
-            byte[] asdu = e.getASDU();
-            if (asdu.length == 0) {
-                return;
-            }
 
             logger.trace("Received a Group Read telegram from '{}' for destination '{}'", e.getSourceAddr(),
                     destination);
+
+            byte[] asdu = e.getASDU();
 
             for (IndividualAddressListener listener : individualAddressListeners) {
                 if (listener.listensTo(source)) {

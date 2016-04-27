@@ -9,6 +9,7 @@ import org.eclipse.smarthome.core.thing.ThingStatus;
 import org.eclipse.smarthome.core.thing.link.ItemChannelLinkRegistry;
 import org.eclipse.smarthome.core.types.Command;
 import org.eclipse.smarthome.core.types.State;
+import org.eclipse.smarthome.core.types.Type;
 import org.openhab.binding.knx.handler.KNXBridgeBaseThingHandler;
 import org.openhab.binding.knx.handler.VirtualActorThingHandler;
 
@@ -62,6 +63,17 @@ public class VirtualSwitchThingHandler extends VirtualActorThingHandler {
         } catch (Exception e) {
             logger.error("An exception occurred while creating a Group Address : '{}'", e.getMessage());
         }
+
+        try {
+            if ((String) getConfig().get(STATUS_GA) != null) {
+                GroupAddress address = new GroupAddress((String) getConfig().get(STATUS_GA));
+                if (address != null) {
+                    groupAddresses.add(address);
+                }
+            }
+        } catch (Exception e) {
+            logger.error("An exception occurred while creating a Group Address : '{}'", e.getMessage());
+        }
     }
 
     @Override
@@ -72,7 +84,27 @@ public class VirtualSwitchThingHandler extends VirtualActorThingHandler {
             if ((String) getConfig().get(SWITCH_GA) != null) {
                 GroupAddress address = new GroupAddress((String) getConfig().get(SWITCH_GA));
                 if (address.equals(destination)) {
-                    updateState(new ChannelUID(getThing().getUID(), CHANNEL_SWITCH), state);
+
+                    Type type = bridge.getType(destination, "1.001", asdu);
+                    if (type != null) {
+                        // update the internal state
+                        state = (State) type;
+                        // update the ESH channel
+                        updateState(new ChannelUID(getThing().getUID(), CHANNEL_SWITCH), state);
+                    } else {
+                        final char[] hexCode = "0123456789ABCDEF".toCharArray();
+                        StringBuilder sb = new StringBuilder(2 + asdu.length * 2);
+                        sb.append("0x");
+                        for (byte b : asdu) {
+                            sb.append(hexCode[(b >> 4) & 0xF]);
+                            sb.append(hexCode[(b & 0xF)]);
+                        }
+
+                        logger.warn(
+                                "Ignoring KNX bus data: couldn't transform to an openHAB type (not supported). Destination='{}', dpt='{}', data='{}'",
+                                new Object[] { destination.toString(), "1.001", sb.toString() });
+                        return;
+                    }
                 }
             }
         } catch (Exception e) {
@@ -86,6 +118,7 @@ public class VirtualSwitchThingHandler extends VirtualActorThingHandler {
 
         try {
             if ((String) getConfig().get(STATUS_GA) != null && state != null) {
+                GroupAddress address = new GroupAddress((String) getConfig().get(STATUS_GA));
                 if (address.equals(destination)) {
                     bridgeHandler.writeToKNX((String) getConfig().get(STATUS_GA), "1.001", state);
                 }

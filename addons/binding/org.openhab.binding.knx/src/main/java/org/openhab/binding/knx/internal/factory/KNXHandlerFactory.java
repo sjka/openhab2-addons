@@ -34,6 +34,7 @@ import org.openhab.binding.knx.handler.physical.GroupAddressThingHandler;
 import org.openhab.binding.knx.handler.physical.RollerShutterSwitchThingHandler;
 import org.openhab.binding.knx.handler.physical.RollerShutterThingHandler;
 import org.openhab.binding.knx.handler.physical.SwitchThingHandler;
+import org.openhab.binding.knx.handler.virtual.VirtualSwitchThingHandler;
 import org.osgi.framework.ServiceRegistration;
 
 import com.google.common.collect.Lists;
@@ -51,7 +52,7 @@ public class KNXHandlerFactory extends BaseThingHandlerFactory {
             KNXBindingConstants.THING_TYPE_SWITCH, KNXBindingConstants.THING_TYPE_ENERGY_SWITCH,
             KNXBindingConstants.THING_TYPE_DIMMER, KNXBindingConstants.THING_TYPE_ROLLERSHUTTER,
             KNXBindingConstants.THING_TYPE_IP_BRIDGE, KNXBindingConstants.THING_TYPE_SERIAL_BRIDGE,
-            KNXBindingConstants.THING_TYPE_ROLLERSHUTTERSWITCH);
+            KNXBindingConstants.THING_TYPE_ROLLERSHUTTERSWITCH, KNXBindingConstants.THING_TYPE_VIRTUALSWITCH);
 
     private Map<ThingUID, ServiceRegistration<?>> discoveryServiceRegs = new HashMap<>();
     protected ItemChannelLinkRegistry itemChannelLinkRegistry;
@@ -108,6 +109,10 @@ public class KNXHandlerFactory extends BaseThingHandlerFactory {
             ThingUID rollerShutterUID = getRollerShutterThingUID(thingTypeUID, thingUID, configuration, bridgeUID);
             return super.createThing(thingTypeUID, configuration, rollerShutterUID, bridgeUID);
         }
+        if (KNXBindingConstants.THING_TYPE_VIRTUALSWITCH.equals(thingTypeUID)) {
+            ThingUID switchUID = getVirtualSwitchThingUID(thingTypeUID, thingUID, configuration, bridgeUID);
+            return super.createThing(thingTypeUID, configuration, switchUID, bridgeUID);
+        }
         throw new IllegalArgumentException("The thing type " + thingTypeUID + " is not supported by the KNX binding.");
     }
 
@@ -137,6 +142,8 @@ public class KNXHandlerFactory extends BaseThingHandlerFactory {
             return new RollerShutterThingHandler(thing, itemChannelLinkRegistry);
         } else if (thing.getThingTypeUID().equals(KNXBindingConstants.THING_TYPE_ROLLERSHUTTERSWITCH)) {
             return new RollerShutterSwitchThingHandler(thing, itemChannelLinkRegistry);
+        } else if (thing.getThingTypeUID().equals(KNXBindingConstants.THING_TYPE_VIRTUALSWITCH)) {
+            return new VirtualSwitchThingHandler(thing, itemChannelLinkRegistry);
         } else {
             return null;
         }
@@ -226,6 +233,22 @@ public class KNXHandlerFactory extends BaseThingHandlerFactory {
 
     }
 
+    private ThingUID getVirtualSwitchThingUID(ThingTypeUID thingTypeUID, ThingUID thingUID, Configuration configuration,
+            ThingUID bridgeUID) {
+
+        String address = ((String) configuration.get(VirtualSwitchThingHandler.ADDRESS));
+
+        if (address != null) {
+            address = address.replace(".", "_");
+        }
+
+        if (thingUID == null && address != null) {
+            thingUID = new ThingUID(thingTypeUID, address, bridgeUID.getId());
+        }
+        return thingUID;
+
+    }
+
     private ThingUID getRollerShutterThingUID(ThingTypeUID thingTypeUID, ThingUID thingUID, Configuration configuration,
             ThingUID bridgeUID) {
 
@@ -240,7 +263,7 @@ public class KNXHandlerFactory extends BaseThingHandlerFactory {
         }
 
         if (address != null) {
-            address = address.replaceAll("/", "_");
+            address = address.replace("/", "_");
         }
 
         if (thingUID == null && address != null) {

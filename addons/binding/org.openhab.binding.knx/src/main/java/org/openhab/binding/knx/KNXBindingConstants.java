@@ -41,6 +41,7 @@ public class KNXBindingConstants {
     public final static ThingTypeUID THING_TYPE_ROLLERSHUTTER = new ThingTypeUID(BINDING_ID, "rollershutter");
     public final static ThingTypeUID THING_TYPE_ROLLERSHUTTERSWITCH = new ThingTypeUID(BINDING_ID,
             "rollershutterswitch");
+    public final static ThingTypeUID THING_TYPE_VIRTUALSWITCH = new ThingTypeUID(BINDING_ID, "virtualswitch");
 
     // List of all Channel ids
     public final static String ERRORS_STARTUP = "errorsall";
