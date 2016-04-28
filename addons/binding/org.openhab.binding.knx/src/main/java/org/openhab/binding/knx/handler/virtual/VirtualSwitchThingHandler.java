@@ -77,6 +77,25 @@ public class VirtualSwitchThingHandler extends VirtualActorThingHandler {
     }
 
     @Override
+    public void handleCommand(ChannelUID channelUID, Command command) {
+
+        if (bridgeHandler == null) {
+            logger.warn("KNX bridge handler not found. Cannot handle command without bridge.");
+            return;
+        }
+
+        state = (State) command;
+
+        try {
+            if ((String) getConfig().get(STATUS_GA) != null) {
+                bridgeHandler.writeToKNX((String) getConfig().get(STATUS_GA), "1.001", state);
+            }
+        } catch (Exception e) {
+            logger.error("An exception occurred while writing to a Group Address : '{}'", e.getMessage());
+        }
+    }
+
+    @Override
     public void onGroupWrite(KNXBridgeBaseThingHandler bridge, IndividualAddress source, GroupAddress destination,
             byte[] asdu) {
 
@@ -124,7 +143,7 @@ public class VirtualSwitchThingHandler extends VirtualActorThingHandler {
                 }
             }
         } catch (Exception e) {
-            logger.error("An exception occurred while creating a Group Address : '{}'", e.getMessage());
+            logger.error("An exception occurred while writing to a Group Address : '{}'", e.getMessage());
         }
     }
 
@@ -134,22 +153,4 @@ public class VirtualSwitchThingHandler extends VirtualActorThingHandler {
         // Nothing to do here
     }
 
-    @Override
-    public void handleCommand(ChannelUID channelUID, Command command) {
-
-        if (bridgeHandler == null) {
-            logger.warn("KNX bridge handler not found. Cannot handle command without bridge.");
-            return;
-        }
-
-        state = (State) command;
-
-        try {
-            if ((String) getConfig().get(STATUS_GA) != null) {
-                bridgeHandler.writeToKNX((String) getConfig().get(STATUS_GA), "1.001", state);
-            }
-        } catch (Exception e) {
-            logger.error("An exception occurred while creating a Group Address : '{}'", e.getMessage());
-        }
-    }
 }
