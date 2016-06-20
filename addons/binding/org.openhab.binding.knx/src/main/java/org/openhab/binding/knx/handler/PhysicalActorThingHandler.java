@@ -15,7 +15,9 @@ import org.eclipse.smarthome.core.thing.Thing;
 import org.eclipse.smarthome.core.thing.ThingStatus;
 import org.eclipse.smarthome.core.thing.link.ItemChannelLinkRegistry;
 import org.eclipse.smarthome.core.types.Command;
+import org.eclipse.smarthome.core.types.RefreshType;
 import org.eclipse.smarthome.core.types.Type;
+import org.openhab.binding.knx.internal.dpt.KNXCoreTypeMapper;
 
 import tuwien.auto.calimero.DataUnitBuilder;
 import tuwien.auto.calimero.DeviceDescriptor;
@@ -24,6 +26,7 @@ import tuwien.auto.calimero.GroupAddress;
 import tuwien.auto.calimero.IndividualAddress;
 import tuwien.auto.calimero.datapoint.CommandDP;
 import tuwien.auto.calimero.datapoint.Datapoint;
+import tuwien.auto.calimero.exception.KNXFormatException;
 import tuwien.auto.calimero.mgmt.PropertyAccess.PID;
 
 public abstract class PhysicalActorThingHandler extends KNXBaseThingHandler {
@@ -147,19 +150,45 @@ public abstract class PhysicalActorThingHandler extends KNXBaseThingHandler {
             return;
         }
 
-        switch (channelUID.getId()) {
-            case CHANNEL_RESET: {
-                if (address != null) {
-                    restart();
-                }
-            }
-        }
-
         String dpt = getDPT(channelUID, command);
         String address = getAddress(channelUID, command);
         Type type = getType(channelUID, command);
 
-        bridgeHandler.writeToKNX(address, dpt, type);
+        if (command instanceof RefreshType) {
+
+            logger.debug("Refreshing channel {}", channelUID);
+
+            if (dpt != null && address != null) {
+
+                if (KNXCoreTypeMapper.toTypeClass(dpt) == null) {
+                    logger.warn("DPT " + dpt + " is not supported by the KNX binding.");
+                    return;
+                }
+
+                GroupAddress groupAddress;
+                try {
+                    groupAddress = new GroupAddress(address);
+                    if (readAddresses.contains(groupAddress)) {
+                        Datapoint datapoint = new CommandDP(groupAddress, getThing().getUID().toString(), 0, dpt);
+                        bridgeHandler.readDatapoint(datapoint, bridgeHandler.getReadRetriesLimit());
+                    }
+                } catch (KNXFormatException e) {
+                    logger.warn("The datapoint for group address '{}' with DPT '{}' could not be initialised", address,
+                            dpt);
+                }
+            }
+        } else {
+            switch (channelUID.getId()) {
+                case CHANNEL_RESET: {
+                    if (address != null) {
+                        restart();
+                    }
+                }
+                default: {
+                    bridgeHandler.writeToKNX(address, dpt, type);
+                }
+            }
+        }
     }
 
     @Override

@@ -29,6 +29,7 @@ import org.eclipse.smarthome.core.thing.ThingStatus;
 import org.eclipse.smarthome.core.thing.binding.BaseThingHandler;
 import org.eclipse.smarthome.core.thing.link.ItemChannelLinkRegistry;
 import org.eclipse.smarthome.core.types.Command;
+import org.eclipse.smarthome.core.types.RefreshType;
 import org.eclipse.smarthome.core.types.State;
 import org.eclipse.smarthome.core.types.Type;
 import org.openhab.binding.knx.GroupAddressListener;
@@ -575,9 +576,45 @@ public abstract class KNXBridgeBaseThingHandler extends BaseThingHandler impleme
         if (channelUID != null) {
             Channel channel = this.getThing().getChannel(channelUID.getId());
             if (channel != null) {
-                Configuration channelConfiguration = channel.getConfiguration();
-                this.writeToKNX((String) channelConfiguration.get(ADDRESS), (String) channelConfiguration.get(DPT),
-                        command);
+                if (command instanceof RefreshType) {
+
+                    logger.debug("Refreshing channel {}", channelUID);
+
+                    Configuration channelConfiguration = channel.getConfiguration();
+                    String dpt = (String) channelConfiguration.get(DPT);
+                    String address = (String) channelConfiguration.get(ADDRESS);
+                    if (dpt != null && address != null) {
+
+                        if (KNXCoreTypeMapper.toTypeClass(dpt) == null) {
+                            logger.warn("DPT " + dpt + " is not supported by the KNX binding.");
+                            return;
+                        }
+
+                        if (channelConfiguration.get(READ) != null && ((Boolean) channelConfiguration.get(READ))) {
+
+                            try {
+                                GroupAddress groupAddress = new GroupAddress(address);
+                                Datapoint datapoint = new CommandDP(groupAddress, getThing().getUID().toString(), 0,
+                                        dpt);
+
+                                logger.debug("Scheduling reading out group address '{}'", address);
+                                readJobs.add(scheduler.schedule(new ReadRunnable(datapoint, getReadRetriesLimit()), 0,
+                                        TimeUnit.SECONDS));
+
+                            } catch (KNXFormatException e) {
+                                logger.warn(
+                                        "The datapoint for group address '{}' with DPT '{}' could not be initialised",
+                                        address, dpt);
+                            }
+                        }
+
+                    }
+
+                } else {
+                    Configuration channelConfiguration = channel.getConfiguration();
+                    this.writeToKNX((String) channelConfiguration.get(ADDRESS), (String) channelConfiguration.get(DPT),
+                            command);
+                }
             } else {
                 logger.error("No channel is associated with channelUID {}", channelUID);
             }
