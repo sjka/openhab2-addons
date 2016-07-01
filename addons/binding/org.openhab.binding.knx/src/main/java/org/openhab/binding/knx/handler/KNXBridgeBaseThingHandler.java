@@ -140,6 +140,8 @@ public abstract class KNXBridgeBaseThingHandler extends BaseThingHandler impleme
         errorsSinceStart = 0;
         errorsSinceInterval = 0;
 
+        readJobs = new ArrayList<ScheduledFuture<?>>();
+
         LogManager.getManager().addWriter(null, logAdapter);
         logger.trace("Connecting bridge");
         connect();
@@ -416,6 +418,8 @@ public abstract class KNXBridgeBaseThingHandler extends BaseThingHandler impleme
             for (ScheduledFuture<?> readJob : readJobs) {
                 readJob.cancel(true);
             }
+        } else {
+            readJobs = new ArrayList<ScheduledFuture<?>>();
         }
 
         if (busJob != null) {
@@ -426,8 +430,6 @@ public abstract class KNXBridgeBaseThingHandler extends BaseThingHandler impleme
 
         busJob = scheduler.scheduleWithFixedDelay(new BusRunnable(), 0,
                 ((BigDecimal) getConfig().get(READING_PAUSE)).intValue(), TimeUnit.MILLISECONDS);
-
-        readJobs = new ArrayList<ScheduledFuture<?>>();
 
         for (Channel channel : getThing().getChannels()) {
 
@@ -590,7 +592,8 @@ public abstract class KNXBridgeBaseThingHandler extends BaseThingHandler impleme
                             return;
                         }
 
-                        if (channelConfiguration.get(READ) != null && ((Boolean) channelConfiguration.get(READ))) {
+                        if (getThing().getStatus() == ThingStatus.ONLINE && channelConfiguration.get(READ) != null
+                                && ((Boolean) channelConfiguration.get(READ))) {
 
                             try {
                                 GroupAddress groupAddress = new GroupAddress(address);
@@ -598,6 +601,7 @@ public abstract class KNXBridgeBaseThingHandler extends BaseThingHandler impleme
                                         dpt);
 
                                 logger.debug("Scheduling reading out group address '{}'", address);
+
                                 readJobs.add(scheduler.schedule(new ReadRunnable(datapoint, getReadRetriesLimit()), 0,
                                         TimeUnit.SECONDS));
 
@@ -619,7 +623,6 @@ public abstract class KNXBridgeBaseThingHandler extends BaseThingHandler impleme
                 logger.error("No channel is associated with channelUID {}", channelUID);
             }
         }
-
     }
 
     public class BusRunnable implements Runnable {
