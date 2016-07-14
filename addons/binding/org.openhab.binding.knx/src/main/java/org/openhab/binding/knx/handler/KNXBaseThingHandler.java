@@ -66,7 +66,7 @@ public abstract class KNXBaseThingHandler extends BaseThingHandler
                 updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.BRIDGE_OFFLINE);
             }
         } else {
-            logger.warn("Can not initialize ThingHandler '{}' because it's bridge is not existing",
+            logger.warn("Can not initialize ThingHandler '{}' because it's bridge does not exist",
                     this.getThing().getUID());
             updateStatus(ThingStatus.OFFLINE);
         }
@@ -80,7 +80,7 @@ public abstract class KNXBaseThingHandler extends BaseThingHandler
             ((KNXBridgeBaseThingHandler) bridgeHandler).unregisterGroupAddressListener(this);
             ((KNXBridgeBaseThingHandler) bridgeHandler).unregisterKNXBridgeListener(this);
         } else {
-            logger.warn("Can not dispose ThingHandler '{}' because it's bridge is not existing",
+            logger.warn("Can not dispose ThingHandler '{}' because it's bridge does not exist",
                     this.getThing().getUID());
         }
     }
