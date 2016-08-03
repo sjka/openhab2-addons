@@ -573,6 +573,22 @@ public abstract class KNXBridgeBaseThingHandler extends BaseThingHandler impleme
     }
 
     @Override
+    public void handleUpdate(ChannelUID channelUID, State newState) {
+
+        if (channelUID != null) {
+            Channel channel = this.getThing().getChannel(channelUID.getId());
+            if (channel != null) {
+                Configuration channelConfiguration = channel.getConfiguration();
+                this.writeToKNX((String) channelConfiguration.get(ADDRESS), (String) channelConfiguration.get(DPT),
+                        newState);
+            } else {
+                logger.error("No channel is associated with channelUID {}", channelUID);
+            }
+        }
+
+    }
+
+    @Override
     public void handleCommand(ChannelUID channelUID, Command command) {
 
         if (channelUID != null) {

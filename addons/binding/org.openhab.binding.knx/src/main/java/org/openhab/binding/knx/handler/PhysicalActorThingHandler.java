@@ -16,6 +16,7 @@ import org.eclipse.smarthome.core.thing.ThingStatus;
 import org.eclipse.smarthome.core.thing.link.ItemChannelLinkRegistry;
 import org.eclipse.smarthome.core.types.Command;
 import org.eclipse.smarthome.core.types.RefreshType;
+import org.eclipse.smarthome.core.types.State;
 import org.eclipse.smarthome.core.types.Type;
 import org.openhab.binding.knx.internal.dpt.KNXCoreTypeMapper;
 
@@ -140,6 +141,31 @@ public abstract class PhysicalActorThingHandler extends KNXBaseThingHandler {
     @Override
     public boolean listensTo(GroupAddress destination) {
         return groupAddresses.contains(destination) || foundGroupAddresses.contains(destination);
+    }
+
+    @Override
+    public void handleUpdate(ChannelUID channelUID, State newState) {
+
+        if (bridgeHandler == null) {
+            logger.warn("KNX bridge handler not found. Cannot handle updates without bridge.");
+            return;
+        }
+
+        String dpt = getDPT(channelUID, newState);
+        String address = getAddress(channelUID, newState);
+        Type type = getType(channelUID, newState);
+
+        switch (channelUID.getId()) {
+            case CHANNEL_RESET: {
+                if (address != null) {
+                    restart();
+                }
+            }
+            default: {
+                bridgeHandler.writeToKNX(address, dpt, type);
+            }
+        }
+
     }
 
     @Override
