@@ -39,6 +39,12 @@
 				<description>Interval between attempts to read the group address on the bus, in seconds</description>
 				<required>false</required>
 			</parameter>
+			<parameter name="autoupdate" type="boolean">
+                <label>Auto Update</label>
+                <description>Flag to indicate whether the channel must updated after a state is updated or a command is posted </description>
+                <required>false</required>
+                <default>true</default>
+            </parameter>
 		</config-description>
 	</thing-type>
 

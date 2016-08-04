@@ -36,6 +36,7 @@ public class KNXBindingConstants {
     public final static ThingTypeUID THING_TYPE_GROUPADDRESS = new ThingTypeUID(BINDING_ID, "ga");
     public final static ThingTypeUID THING_TYPE_GENERIC = new ThingTypeUID(BINDING_ID, "generic");
     public final static ThingTypeUID THING_TYPE_SWITCH = new ThingTypeUID(BINDING_ID, "switch");
+    public final static ThingTypeUID THING_TYPE_THERMOSTAT = new ThingTypeUID(BINDING_ID, "thermostat");
     public final static ThingTypeUID THING_TYPE_DIMMER = new ThingTypeUID(BINDING_ID, "dimmer");
     public final static ThingTypeUID THING_TYPE_ENERGY_SWITCH = new ThingTypeUID(BINDING_ID, "energyswitch");
     public final static ThingTypeUID THING_TYPE_ROLLERSHUTTER = new ThingTypeUID(BINDING_ID, "rollershutter");

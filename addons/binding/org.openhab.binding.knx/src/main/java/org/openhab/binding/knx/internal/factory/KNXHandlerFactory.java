@@ -34,6 +34,7 @@ import org.openhab.binding.knx.handler.physical.GroupAddressThingHandler;
 import org.openhab.binding.knx.handler.physical.RollerShutterSwitchThingHandler;
 import org.openhab.binding.knx.handler.physical.RollerShutterThingHandler;
 import org.openhab.binding.knx.handler.physical.SwitchThingHandler;
+import org.openhab.binding.knx.handler.physical.ThermostatThingHandler;
 import org.openhab.binding.knx.handler.virtual.VirtualSwitchThingHandler;
 import org.osgi.framework.ServiceRegistration;
 
@@ -49,10 +50,11 @@ public class KNXHandlerFactory extends BaseThingHandlerFactory {
 
     public final static Collection<ThingTypeUID> SUPPORTED_THING_TYPES_UIDS = Lists.newArrayList(
             KNXBindingConstants.THING_TYPE_GROUPADDRESS, KNXBindingConstants.THING_TYPE_GENERIC,
-            KNXBindingConstants.THING_TYPE_SWITCH, KNXBindingConstants.THING_TYPE_ENERGY_SWITCH,
-            KNXBindingConstants.THING_TYPE_DIMMER, KNXBindingConstants.THING_TYPE_ROLLERSHUTTER,
-            KNXBindingConstants.THING_TYPE_IP_BRIDGE, KNXBindingConstants.THING_TYPE_SERIAL_BRIDGE,
-            KNXBindingConstants.THING_TYPE_ROLLERSHUTTERSWITCH, KNXBindingConstants.THING_TYPE_VIRTUALSWITCH);
+            KNXBindingConstants.THING_TYPE_SWITCH, KNXBindingConstants.THING_TYPE_THERMOSTAT,
+            KNXBindingConstants.THING_TYPE_ENERGY_SWITCH, KNXBindingConstants.THING_TYPE_DIMMER,
+            KNXBindingConstants.THING_TYPE_ROLLERSHUTTER, KNXBindingConstants.THING_TYPE_IP_BRIDGE,
+            KNXBindingConstants.THING_TYPE_SERIAL_BRIDGE, KNXBindingConstants.THING_TYPE_ROLLERSHUTTERSWITCH,
+            KNXBindingConstants.THING_TYPE_VIRTUALSWITCH);
 
     private Map<ThingUID, ServiceRegistration<?>> discoveryServiceRegs = new HashMap<>();
     protected ItemChannelLinkRegistry itemChannelLinkRegistry;
@@ -92,6 +94,10 @@ public class KNXHandlerFactory extends BaseThingHandlerFactory {
         if (KNXBindingConstants.THING_TYPE_SWITCH.equals(thingTypeUID)) {
             ThingUID switchUID = getSwitchThingUID(thingTypeUID, thingUID, configuration, bridgeUID);
             return super.createThing(thingTypeUID, configuration, switchUID, bridgeUID);
+        }
+        if (KNXBindingConstants.THING_TYPE_THERMOSTAT.equals(thingTypeUID)) {
+            ThingUID thermostatUID = getThermostatThingUID(thingTypeUID, thingUID, configuration, bridgeUID);
+            return super.createThing(thingTypeUID, configuration, thermostatUID, bridgeUID);
         }
         if (KNXBindingConstants.THING_TYPE_ENERGY_SWITCH.equals(thingTypeUID)) {
             ThingUID switchUID = getSwitchThingUID(thingTypeUID, thingUID, configuration, bridgeUID);
@@ -134,6 +140,8 @@ public class KNXHandlerFactory extends BaseThingHandlerFactory {
             return new GenericThingHandler(thing, itemChannelLinkRegistry);
         } else if (thing.getThingTypeUID().equals(KNXBindingConstants.THING_TYPE_SWITCH)) {
             return new SwitchThingHandler(thing, itemChannelLinkRegistry);
+        } else if (thing.getThingTypeUID().equals(KNXBindingConstants.THING_TYPE_THERMOSTAT)) {
+            return new ThermostatThingHandler(thing, itemChannelLinkRegistry);
         } else if (thing.getThingTypeUID().equals(KNXBindingConstants.THING_TYPE_ENERGY_SWITCH)) {
             return new EnergySwitchThingHandler(thing, itemChannelLinkRegistry);
         } else if (thing.getThingTypeUID().equals(KNXBindingConstants.THING_TYPE_DIMMER)) {
@@ -193,6 +201,25 @@ public class KNXHandlerFactory extends BaseThingHandlerFactory {
 
         if (address == null) {
             address = ((String) configuration.get(SwitchThingHandler.STATUS_GA));
+        }
+
+        if (address != null) {
+            address = address.replace("/", "_");
+        }
+
+        if (thingUID == null && address != null) {
+            thingUID = new ThingUID(thingTypeUID, address, bridgeUID.getId());
+        }
+        return thingUID;
+    }
+
+    private ThingUID getThermostatThingUID(ThingTypeUID thingTypeUID, ThingUID thingUID, Configuration configuration,
+            ThingUID bridgeUID) {
+
+        String address = ((String) configuration.get(ThermostatThingHandler.SETPOINT_GA));
+
+        if (address == null) {
+            address = ((String) configuration.get(ThermostatThingHandler.STATUS_GA));
         }
 
         if (address != null) {

@@ -7,6 +7,7 @@ import org.eclipse.smarthome.core.library.types.StringType;
 import org.eclipse.smarthome.core.thing.ChannelUID;
 import org.eclipse.smarthome.core.thing.Thing;
 import org.eclipse.smarthome.core.thing.link.ItemChannelLinkRegistry;
+import org.eclipse.smarthome.core.types.Command;
 import org.eclipse.smarthome.core.types.State;
 import org.eclipse.smarthome.core.types.Type;
 import org.openhab.binding.knx.handler.PhysicalActorThingHandler;
@@ -29,7 +30,10 @@ public class GroupAddressThingHandler extends PhysicalActorThingHandler {
 
     // List of all Configuration parameters
     public static final String ADDRESS = "address";
+    public static final String AUTO_UPDATE = "autoupdate";
     public static final String DPT = "dpt";
+
+    boolean autoUpdated = false;
 
     public GroupAddressThingHandler(Thing thing, ItemChannelLinkRegistry itemChannelLinkRegistry) {
         super(thing, itemChannelLinkRegistry);
@@ -55,6 +59,27 @@ public class GroupAddressThingHandler extends PhysicalActorThingHandler {
     public boolean listensTo(IndividualAddress source) {
         // we listen to telegrams coming from any source
         return true;
+    }
+
+    @Override
+    public void handleUpdate(ChannelUID channelUID, State newState) {
+
+        if (autoUpdated) {
+            autoUpdated = false;
+        } else {
+            super.handleUpdate(channelUID, newState);
+        }
+    }
+
+    @Override
+    public void handleCommand(ChannelUID channelUID, Command command) {
+
+        super.handleCommand(channelUID, command);
+
+        if (getConfig().get(AUTO_UPDATE) != null && (boolean) getConfig().get(AUTO_UPDATE)) {
+            autoUpdated = true;
+            updateState(channelUID, (State) command);
+        }
     }
 
     @Override

@@ -9,9 +9,8 @@
     http://www.eclipse.org/legal/epl-v10.html
 
 -->
-<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" immediate="true" name="org.openhab.binding.knx.handler.SerialBridgeThingHandler">
-   <implementation class="org.openhab.binding.knx.handler.SerialBridgeThingHandler"/>
-   <reference bind="addKNXTypeMapper" cardinality="1..n" interface="org.openhab.binding.knx.internal.dpt.KNXTypeMapper" name="KNXTypeMapper" policy="dynamic" unbind="removeKNXTypeMapper"/>
+<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" immediate="true" name="org.openhab.binding.knx.handler.physical.DimmerThingHandler">
+   <implementation class="org.openhab.binding.knx.handler.physical.DimmerThingHandler"/>
    <service>
       <provide interface="org.eclipse.smarthome.core.autoupdate.AutoUpdateBindingConfigProvider"/>
    </service>

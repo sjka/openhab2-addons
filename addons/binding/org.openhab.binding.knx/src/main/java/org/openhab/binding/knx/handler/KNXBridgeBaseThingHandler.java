@@ -21,6 +21,7 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 import org.eclipse.smarthome.config.core.Configuration;
+import org.eclipse.smarthome.core.autoupdate.AutoUpdateBindingConfigProvider;
 import org.eclipse.smarthome.core.library.types.DecimalType;
 import org.eclipse.smarthome.core.thing.Channel;
 import org.eclipse.smarthome.core.thing.ChannelUID;
@@ -77,7 +78,8 @@ import tuwien.auto.calimero.process.ProcessListenerEx;
  *
  * @author Kai Kreuzer / Karel Goderis - Initial contribution
  */
-public abstract class KNXBridgeBaseThingHandler extends BaseThingHandler implements GroupAddressListener {
+public abstract class KNXBridgeBaseThingHandler extends BaseThingHandler
+        implements GroupAddressListener, AutoUpdateBindingConfigProvider {
 
     // List of all Configuration parameters
     public static final String AUTO_RECONNECT_PERIOD = "autoReconnectPeriod";
@@ -88,6 +90,7 @@ public abstract class KNXBridgeBaseThingHandler extends BaseThingHandler impleme
     public final static String INCREASE_DECREASE_DPT = "increasedecreaseDPT";
     public final static String PERCENT_DPT = "percentDPT";
     public final static String ADDRESS = "address";
+    public final static String AUTO_UPDATE = "autoupdate";
     public final static String STATE_ADDRESS = "stateGA";
     public final static String INCREASE_DECREASE_ADDRESS = "increasedecreaseGA";
     public final static String PERCENT_ADDRESS = "percentGA";
@@ -105,6 +108,7 @@ public abstract class KNXBridgeBaseThingHandler extends BaseThingHandler impleme
     static protected Collection<KNXTypeMapper> typeMappers = new HashSet<KNXTypeMapper>();
     private LinkedBlockingQueue<RetryDatapoint> readDatapoints = new LinkedBlockingQueue<RetryDatapoint>();
     protected ConcurrentHashMap<IndividualAddress, Destination> destinations = new ConcurrentHashMap<IndividualAddress, Destination>();
+    private List<ChannelUID> autoUpdateChannels = new CopyOnWriteArrayList<>();
 
     protected ItemChannelLinkRegistry itemChannelLinkRegistry;
     private ProcessCommunicator pc = null;
@@ -573,14 +577,37 @@ public abstract class KNXBridgeBaseThingHandler extends BaseThingHandler impleme
     }
 
     @Override
+    public Boolean autoUpdate(String itemName) {
+        // The principle we maintain is that is up to KNX devices to emit the actual state of a variable, rather
+        // than us auto-updating the channel. Most KNX devices have an Communication Object for both writing/updating a
+        // variable, and next to that another Communication Object to read out the state, or the device (T)ransmits the
+        // actual state after an update. In other words, implementing classes can either do nothing and wait for a
+        // (T)ransmit, or implement an explicit read operation to read out the actual value from the KNX device
+        return false;
+    }
+
+    @Override
     public void handleUpdate(ChannelUID channelUID, State newState) {
+
+        logger.debug("handleUpdate {} {}", channelUID, newState);
 
         if (channelUID != null) {
             Channel channel = this.getThing().getChannel(channelUID.getId());
+
             if (channel != null) {
                 Configuration channelConfiguration = channel.getConfiguration();
-                this.writeToKNX((String) channelConfiguration.get(ADDRESS), (String) channelConfiguration.get(DPT),
-                        newState);
+                if (channelConfiguration.get(AUTO_UPDATE) != null && (boolean) channelConfiguration.get(AUTO_UPDATE)) {
+                    if (autoUpdateChannels.contains(channelUID)) {
+                        logger.debug("Removing {} from the autoUpdateChannels", channelUID);
+                        autoUpdateChannels.remove(channelUID);
+                    } else {
+                        this.writeToKNX((String) channelConfiguration.get(ADDRESS),
+                                (String) channelConfiguration.get(DPT), newState);
+                    }
+                } else {
+                    this.writeToKNX((String) channelConfiguration.get(ADDRESS), (String) channelConfiguration.get(DPT),
+                            newState);
+                }
             } else {
                 logger.error("No channel is associated with channelUID {}", channelUID);
             }
@@ -634,6 +661,13 @@ public abstract class KNXBridgeBaseThingHandler extends BaseThingHandler impleme
                     Configuration channelConfiguration = channel.getConfiguration();
                     this.writeToKNX((String) channelConfiguration.get(ADDRESS), (String) channelConfiguration.get(DPT),
                             command);
+                    if (channelConfiguration.get(AUTO_UPDATE) != null
+                            && (boolean) channelConfiguration.get(AUTO_UPDATE)) {
+                        logger.debug("Adding {} to the autoUpdateChannels", channelUID);
+                        autoUpdateChannels.add(channelUID);
+                        logger.debug("updateState {} {}", channelUID, command);
+                        updateState(channelUID, (State) command);
+                    }
                 }
             } else {
                 logger.error("No channel is associated with channelUID {}", channelUID);
