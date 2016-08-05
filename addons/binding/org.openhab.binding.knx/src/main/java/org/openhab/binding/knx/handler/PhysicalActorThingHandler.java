@@ -4,9 +4,12 @@ import static org.openhab.binding.knx.KNXBindingConstants.*;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
@@ -43,7 +46,7 @@ public abstract class PhysicalActorThingHandler extends KNXBaseThingHandler {
     protected boolean filledDescription = false;
 
     // list of addresses that have to read from the KNX bus pro-actively every INTERVAL seconds
-    protected List<GroupAddress> readAddresses = new ArrayList<GroupAddress>();
+    protected Set<GroupAddress> readAddresses = Collections.synchronizedSet(new HashSet<GroupAddress>());
     private ScheduledFuture<?> readJob;
     private ScheduledFuture<?> pollingJob;
     private ScheduledFuture<?> descriptionJob;
@@ -81,7 +84,7 @@ public abstract class PhysicalActorThingHandler extends KNXBaseThingHandler {
     public void initialize() {
         super.initialize();
 
-        updateStatus(ThingStatus.OFFLINE);
+        // updateStatus(ThingStatus.OFFLINE);
 
         try {
             if ((String) getConfig().get(ADDRESS) != null) {

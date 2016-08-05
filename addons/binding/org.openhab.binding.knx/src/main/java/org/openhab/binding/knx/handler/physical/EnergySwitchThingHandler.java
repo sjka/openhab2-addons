@@ -39,7 +39,6 @@ public class EnergySwitchThingHandler extends SwitchThingHandler {
 
     @Override
     public void initialize() {
-        super.initialize();
 
         try {
             if ((String) getConfig().get(OPERATING_HOURS_GA) != null) {
@@ -82,6 +81,8 @@ public class EnergySwitchThingHandler extends SwitchThingHandler {
         } catch (Exception e) {
             logger.error("An exception occurred while creating a Group Address : '{}'", e.getMessage());
         }
+
+        super.initialize();
     }
 
     @Override

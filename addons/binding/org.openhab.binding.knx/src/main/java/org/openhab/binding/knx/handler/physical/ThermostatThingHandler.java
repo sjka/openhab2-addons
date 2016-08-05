@@ -34,7 +34,6 @@ public class ThermostatThingHandler extends PhysicalActorThingHandler {
 
     @Override
     public void initialize() {
-        super.initialize();
 
         try {
             if ((String) getConfig().get(SETPOINT_GA) != null) {
@@ -53,6 +52,7 @@ public class ThermostatThingHandler extends PhysicalActorThingHandler {
                 if (address != null) {
                     groupAddresses.add(address);
                     if ((Boolean) getConfig().get(READ)) {
+                        logger.debug("Registering {} in read Addresses", address);
                         readAddresses.add(address);
                     }
                 }
@@ -60,6 +60,8 @@ public class ThermostatThingHandler extends PhysicalActorThingHandler {
         } catch (Exception e) {
             logger.error("An exception occurred while creating a Group Address : '{}'", e.getMessage());
         }
+
+        super.initialize();
     }
 
     @Override

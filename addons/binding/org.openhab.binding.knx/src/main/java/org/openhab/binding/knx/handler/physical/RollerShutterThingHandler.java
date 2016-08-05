@@ -49,7 +49,6 @@ public class RollerShutterThingHandler extends PhysicalActorThingHandler {
 
     @Override
     public void initialize() {
-        super.initialize();
 
         try {
             if ((String) getConfig().get(UP_DOWN_GA) != null) {
@@ -125,6 +124,8 @@ public class RollerShutterThingHandler extends PhysicalActorThingHandler {
         } catch (Exception e) {
             logger.error("An exception occurred while creating a Group Address : '{}'", e.getMessage());
         }
+
+        super.initialize();
     }
 
     @Override

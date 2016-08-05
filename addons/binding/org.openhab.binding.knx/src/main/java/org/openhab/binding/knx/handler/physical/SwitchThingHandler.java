@@ -34,7 +34,6 @@ public class SwitchThingHandler extends PhysicalActorThingHandler {
 
     @Override
     public void initialize() {
-        super.initialize();
 
         try {
             if ((String) getConfig().get(SWITCH_GA) != null) {
@@ -60,6 +59,8 @@ public class SwitchThingHandler extends PhysicalActorThingHandler {
         } catch (Exception e) {
             logger.error("An exception occurred while creating a Group Address : '{}'", e.getMessage());
         }
+
+        super.initialize();
     }
 
     @Override
