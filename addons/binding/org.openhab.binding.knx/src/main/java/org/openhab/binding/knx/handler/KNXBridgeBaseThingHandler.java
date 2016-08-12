@@ -21,7 +21,6 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 import org.eclipse.smarthome.config.core.Configuration;
-import org.eclipse.smarthome.core.autoupdate.AutoUpdateBindingConfigProvider;
 import org.eclipse.smarthome.core.library.types.DecimalType;
 import org.eclipse.smarthome.core.thing.Channel;
 import org.eclipse.smarthome.core.thing.ChannelUID;
@@ -78,8 +77,7 @@ import tuwien.auto.calimero.process.ProcessListenerEx;
  *
  * @author Kai Kreuzer / Karel Goderis - Initial contribution
  */
-public abstract class KNXBridgeBaseThingHandler extends BaseThingHandler
-        implements GroupAddressListener, AutoUpdateBindingConfigProvider {
+public abstract class KNXBridgeBaseThingHandler extends BaseThingHandler implements GroupAddressListener {
 
     // List of all Configuration parameters
     public static final String AUTO_RECONNECT_PERIOD = "autoReconnectPeriod";
@@ -574,16 +572,6 @@ public abstract class KNXBridgeBaseThingHandler extends BaseThingHandler
         if (knxBusListener != null) {
             knxBusListeners.remove(knxBusListener);
         }
-    }
-
-    @Override
-    public Boolean autoUpdate(String itemName) {
-        // The principle we maintain is that is up to KNX devices to emit the actual state of a variable, rather
-        // than us auto-updating the channel. Most KNX devices have an Communication Object for both writing/updating a
-        // variable, and next to that another Communication Object to read out the state, or the device (T)ransmits the
-        // actual state after an update. In other words, implementing classes can either do nothing and wait for a
-        // (T)ransmit, or implement an explicit read operation to read out the actual value from the KNX device
-        return false;
     }
 
     @Override

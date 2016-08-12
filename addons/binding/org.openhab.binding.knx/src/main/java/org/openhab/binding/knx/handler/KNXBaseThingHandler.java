@@ -10,7 +10,6 @@ package org.openhab.binding.knx.handler;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.eclipse.smarthome.core.autoupdate.AutoUpdateBindingConfigProvider;
 import org.eclipse.smarthome.core.thing.Bridge;
 import org.eclipse.smarthome.core.thing.Thing;
 import org.eclipse.smarthome.core.thing.ThingStatus;
@@ -34,7 +33,7 @@ import tuwien.auto.calimero.IndividualAddress;
  * @author Karel Goderis - Initial contribution
  */
 public abstract class KNXBaseThingHandler extends BaseThingHandler
-        implements IndividualAddressListener, GroupAddressListener, KNXBridgeListener, AutoUpdateBindingConfigProvider {
+        implements IndividualAddressListener, GroupAddressListener, KNXBridgeListener {
 
     protected Logger logger = LoggerFactory.getLogger(KNXBaseThingHandler.class);
 
@@ -109,16 +108,6 @@ public abstract class KNXBaseThingHandler extends BaseThingHandler
     @Override
     public boolean listensTo(GroupAddress destination) {
         return groupAddresses.contains(destination);
-    }
-
-    @Override
-    public Boolean autoUpdate(String itemName) {
-        // The principle we maintain is that is up to KNX devices to emit the actual state of a variable, rather
-        // than us auto-updating the channel. Most KNX devices have an Communication Object for both writing/updating a
-        // variable, and next to that another Communication Object to read out the state, or the device (T)ransmits the
-        // actual state after an update. In other words, implementing classes can either do nothing and wait for a
-        // (T)ransmit, or implement an explicit read operation to read out the actual value from the KNX device
-        return false;
     }
 
 }
