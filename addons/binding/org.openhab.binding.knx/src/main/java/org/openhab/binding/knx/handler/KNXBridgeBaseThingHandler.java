@@ -653,8 +653,8 @@ public abstract class KNXBridgeBaseThingHandler extends BaseThingHandler impleme
                     Configuration channelConfiguration = channel.getConfiguration();
                     this.writeToKNX((String) channelConfiguration.get(ADDRESS), (String) channelConfiguration.get(DPT),
                             command);
-                    if (channelConfiguration.get(AUTO_UPDATE) != null
-                            && (boolean) channelConfiguration.get(AUTO_UPDATE)) {
+                    if (channelConfiguration.get(AUTO_UPDATE) != null && (boolean) channelConfiguration.get(AUTO_UPDATE)
+                            && command instanceof State) {
                         logger.debug("Adding {} to the autoUpdateChannels", channelUID);
                         autoUpdateChannels.add(channelUID);
                         logger.debug("updateState {} {}", channelUID, command);
