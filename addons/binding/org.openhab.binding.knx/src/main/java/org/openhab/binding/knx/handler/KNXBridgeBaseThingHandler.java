@@ -373,6 +373,7 @@ public abstract class KNXBridgeBaseThingHandler extends BaseThingHandler impleme
         } catch (KNXException e) {
             logger.error("Error connecting to KNX bus: {}", e.getMessage());
             disconnect();
+            onConnectionLost();
         }
     }
 
@@ -398,12 +399,15 @@ public abstract class KNXBridgeBaseThingHandler extends BaseThingHandler impleme
             pc.detach();
         }
 
+        if (nll != null) {
+            link.removeLinkListener(nll);
+        }
+
         if (link != null) {
             logger.info("Closing KNX connection");
             link.close();
         }
 
-        onConnectionLost();
     }
 
     public void onConnectionLost() {
