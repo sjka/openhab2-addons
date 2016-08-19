@@ -247,63 +247,70 @@ public class KNXCoreTypeMapper implements KNXTypeMapper {
         try {
             DPTXlator translator = TranslatorTypes.createTranslator(mainNumber, dptID);
             dpt = translator.getType();
-
         } catch (KNXException e) {
-            e.printStackTrace();
             return null;
         }
 
-        // check for HSBType first, because it extends PercentType as well
-        if (type instanceof HSBType) {
-            // TODO lewie: THIS IS UNTETED!!!
-            HSBType hc = ((HSBType) type);
-            return "r:" + Integer.toString(hc.getRed().intValue()) + " g:" + Integer.toString(hc.getGreen().intValue())
-                    + " b:" + Integer.toString(hc.getBlue().intValue());
-        } else if (type instanceof OnOffType) {
-            return type.equals(OnOffType.OFF) ? dpt.getLowerValue() : dpt.getUpperValue();
-        } else if (type instanceof UpDownType) {
-            return type.equals(UpDownType.UP) ? dpt.getLowerValue() : dpt.getUpperValue();
-        } else if (type instanceof IncreaseDecreaseType) {
-            DPT valueDPT = ((DPTXlator3BitControlled.DPT3BitControlled) dpt).getControlDPT();
-            return type.equals(IncreaseDecreaseType.DECREASE) ? valueDPT.getLowerValue() + " 5"
-                    : valueDPT.getUpperValue() + " 5";
-        } else if (type instanceof OpenClosedType) {
-            return type.equals(OpenClosedType.CLOSED) ? dpt.getLowerValue() : dpt.getUpperValue();
-        } else if (type instanceof StopMoveType) {
-            return type.equals(StopMoveType.STOP) ? dpt.getLowerValue() : dpt.getUpperValue();
-        } else if (type instanceof PercentType) {
-            return type.toString();
-        } else if (type instanceof DecimalType) {
-            switch (mainNumber) {
-                case 2:
-                    DPT valueDPT = ((DPTXlator1BitControlled.DPT1BitControlled) dpt).getValueDPT();
-                    switch (((DecimalType) type).intValue()) {
-                        case 0:
-                            return "0 " + valueDPT.getLowerValue();
-                        case 1:
-                            return "0 " + valueDPT.getUpperValue();
-                        case 2:
-                            return "1 " + valueDPT.getLowerValue();
-                        default:
-                            return "1 " + valueDPT.getUpperValue();
-                    }
-                case 18:
-                    int intVal = ((DecimalType) type).intValue();
-                    if (intVal > 63) {
-                        return "learn " + (intVal - 0x80);
-                    } else {
-                        return "activate " + intVal;
-                    }
-                default:
-                    return type.toString();
+        try {
+            // check for HSBType first, because it extends PercentType as well
+            if (type instanceof HSBType) {
+                // TODO lewie: THIS IS UNTETED!!!
+                HSBType hc = ((HSBType) type);
+                return "r:" + Integer.toString(hc.getRed().intValue()) + " g:"
+                        + Integer.toString(hc.getGreen().intValue()) + " b:"
+                        + Integer.toString(hc.getBlue().intValue());
+            } else if (type instanceof OnOffType) {
+                return type.equals(OnOffType.OFF) ? dpt.getLowerValue() : dpt.getUpperValue();
+            } else if (type instanceof UpDownType) {
+                return type.equals(UpDownType.UP) ? dpt.getLowerValue() : dpt.getUpperValue();
+            } else if (type instanceof IncreaseDecreaseType) {
+                DPT valueDPT = ((DPTXlator3BitControlled.DPT3BitControlled) dpt).getControlDPT();
+                return type.equals(IncreaseDecreaseType.DECREASE) ? valueDPT.getLowerValue() + " 5"
+                        : valueDPT.getUpperValue() + " 5";
+            } else if (type instanceof OpenClosedType) {
+                return type.equals(OpenClosedType.CLOSED) ? dpt.getLowerValue() : dpt.getUpperValue();
+            } else if (type instanceof StopMoveType) {
+                return type.equals(StopMoveType.STOP) ? dpt.getLowerValue() : dpt.getUpperValue();
+            } else if (type instanceof PercentType) {
+                return type.toString();
+            } else if (type instanceof DecimalType) {
+                switch (mainNumber) {
+                    case 2:
+                        DPT valueDPT = ((DPTXlator1BitControlled.DPT1BitControlled) dpt).getValueDPT();
+                        switch (((DecimalType) type).intValue()) {
+                            case 0:
+                                return "0 " + valueDPT.getLowerValue();
+                            case 1:
+                                return "0 " + valueDPT.getUpperValue();
+                            case 2:
+                                return "1 " + valueDPT.getLowerValue();
+                            default:
+                                return "1 " + valueDPT.getUpperValue();
+                        }
+                    case 3:
+                        break;
+                    case 18:
+                        int intVal = ((DecimalType) type).intValue();
+                        if (intVal > 63) {
+                            return "learn " + (intVal - 0x80);
+                        } else {
+                            return "activate " + intVal;
+                        }
+                    default:
+                        return type.toString();
+                }
+            } else if (type instanceof StringType) {
+                return type.toString();
+            } else if (type instanceof DateTimeType) {
+                return formatDateTime((DateTimeType) type, dptID);
             }
-        } else if (type instanceof StringType) {
-            return type.toString();
-        } else if (type instanceof DateTimeType) {
-            return formatDateTime((DateTimeType) type, dptID);
+        } catch (Exception e) {
+            logger.error("An exception occurred converting type {} to dpt id {} : {}",
+                    new Object[] { type, dptID, e.getMessage() });
+            return null;
         }
 
-        logger.debug("toDPTValue: Couldn't get value for {} dpt id {} (no mapping).", type, dptID);
+        logger.debug("toDPTValue: Couldn't convert type {} to dpt id {} (no mapping).", type, dptID);
 
         return null;
     }
