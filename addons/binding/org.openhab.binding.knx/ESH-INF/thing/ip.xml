@@ -15,27 +15,27 @@
         </channels>
         
         <config-description>
+            <parameter name="ipConnectionType" type="text">
+                <label>IP Connection Type</label>
+                <description>The ip connection type for connecting to the KNX bus. Could be either TUNNEL or ROUTER</description>
+                <required>true</required>
+            </parameter>  
             <parameter name="ipAddress" type="text">
                 <label>Network Address</label>
                 <description>Network address of the KNX/IP gateway</description>
-                <required>true</required>
+                <required>false</required> <!-- Not required if ipConnectionType is ROUTER -->
             </parameter>
             <parameter name="portNumber" type="integer">
                 <label>Port Number</label>
                 <description>Port number of the KNX/IP gateway</description>
-                <required>true</required>
+                <required>false</required> <!-- Not required if ipConnectionType is ROUTER -->
             </parameter>
             <parameter name="localIp" type="text">
                 <label>Local Network Address</label>
                 <description>Network address of the local host to be used to set up the connection to the KNX/IP gateway</description>
                 <required>false</required>
             </parameter>      
-            <parameter name="ipConnectionType" type="text">
-                <label>IP Connection Type</label>
-                <description>The ip connection type for connecting to the KNX bus. Could be either TUNNEL or ROUTER</description>
-                <required>true</required>
-            </parameter>  
-            <parameter name="localSourceAddr" type="text">
+             <parameter name="localSourceAddr" type="text">
                 <label>local KNX GA</label>
                 <description>The group address for identification of this KNX/IP gateway within the KNX bus. Default is 0.0.0</description>
                 <required>false</required>
