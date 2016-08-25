@@ -19,8 +19,8 @@
 		</channels>
 
 		<config-description>
-			<parameter name="address" type="text">
-				<label>Address</label>
+			<parameter name="groupaddress" type="text">
+				<label>Group Address</label>
 				<description>The group address in x/y/z notation</description>
 				<required>true</required>
 			</parameter>
@@ -53,5 +53,35 @@
 		<label>Input/Output Channel</label>
 		<description>The IO channel allows to read/write values from/to the group address</description>
 	</channel-type>
+	
+	<channel-type id="switch">
+        <item-type>Switch</item-type>
+        <label>Input/Output Channel</label>
+        <description>The IO channel allows to read/write values from/to the group address</description>
+    </channel-type>
+    
+    <channel-type id="number">
+        <item-type>Number</item-type>
+        <label>Input/Output Channel</label>
+        <description>The IO channel allows to read/write values from/to the group address</description>
+    </channel-type>
+    
+     <channel-type id="datetime">
+        <item-type>DateTime</item-type>
+        <label>Input/Output Channel</label>
+        <description>The IO channel allows to read/write values from/to the group address</description>
+    </channel-type>
+    
+    <channel-type id="contact">
+        <item-type>Contact</item-type>
+        <label>Input/Output Channel</label>
+        <description>The IO channel allows to read/write values from/to the group address</description>
+    </channel-type>
+    
+    <channel-type id="dimmer">
+        <item-type>Dimmer</item-type>
+        <label>Input/Output Channel</label>
+        <description>The IO channel allows to read/write values from/to the group address</description>
+    </channel-type>
 	
 </thing:thing-descriptions>

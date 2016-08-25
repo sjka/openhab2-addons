@@ -253,9 +253,9 @@ public abstract class KNXBridgeBaseThingHandler extends BaseThingHandler impleme
                 public void indication(FrameEvent e) {
 
                     CEMILData cemid = (CEMILData) e.getFrame();
-                    logger.trace("Received indication frame from {} to {} : Code {} AckReq {} PosConf {} Repit {}",
-                            new Object[] { cemid.getSource(), cemid.getDestination(), cemid.getMessageCode(),
-                                    cemid.isAckRequested(), cemid.isPositiveConfirmation(), cemid.isRepetition() });
+                    // logger.trace("Received indication frame from {} to {} : Code {} AckReq {} PosConf {} Repit {}",
+                    // new Object[] { cemid.getSource(), cemid.getDestination(), cemid.getMessageCode(),
+                    // cemid.isAckRequested(), cemid.isPositiveConfirmation(), cemid.isRepetition() });
 
                     if (intervalTimestamp == 0) {
                         intervalTimestamp = System.currentTimeMillis();
@@ -294,9 +294,9 @@ public abstract class KNXBridgeBaseThingHandler extends BaseThingHandler impleme
                 public void confirmation(FrameEvent e) {
 
                     CEMILData cemid = (CEMILData) e.getFrame();
-                    logger.trace("Received confirmation frame from {} to {} : Code {} AckReq {} PosConf {} Repit {}",
-                            new Object[] { cemid.getSource(), cemid.getDestination(), cemid.getMessageCode(),
-                                    cemid.isAckRequested(), cemid.isPositiveConfirmation(), cemid.isRepetition() });
+                    // logger.trace("Received confirmation frame from {} to {} : Code {} AckReq {} PosConf {} Repit {}",
+                    // new Object[] { cemid.getSource(), cemid.getDestination(), cemid.getMessageCode(),
+                    // cemid.isAckRequested(), cemid.isPositiveConfirmation(), cemid.isRepetition() });
 
                     if (intervalTimestamp == 0) {
                         intervalTimestamp = System.currentTimeMillis();
@@ -404,7 +404,6 @@ public abstract class KNXBridgeBaseThingHandler extends BaseThingHandler impleme
         }
 
         if (link != null) {
-            logger.info("Closing KNX connection");
             link.close();
         }
 
@@ -581,7 +580,7 @@ public abstract class KNXBridgeBaseThingHandler extends BaseThingHandler impleme
     @Override
     public void handleUpdate(ChannelUID channelUID, State newState) {
 
-        logger.debug("handleUpdate {} {}", channelUID, newState);
+        logger.trace("handleUpdate {} {}", channelUID, newState);
 
         if (channelUID != null) {
             Channel channel = this.getThing().getChannel(channelUID.getId());
@@ -609,6 +608,8 @@ public abstract class KNXBridgeBaseThingHandler extends BaseThingHandler impleme
 
     @Override
     public void handleCommand(ChannelUID channelUID, Command command) {
+
+        logger.trace("handleCommand {} {}", channelUID, command);
 
         if (channelUID != null) {
             Channel channel = this.getThing().getChannel(channelUID.getId());
@@ -891,7 +892,7 @@ public abstract class KNXBridgeBaseThingHandler extends BaseThingHandler impleme
                 return;
             }
 
-            logger.trace("Received a Group Read telegram from '{}' for destination '{}'", e.getSourceAddr(),
+            logger.trace("Received a Group Read Response telegram from '{}' for destination '{}'", e.getSourceAddr(),
                     destination);
 
             for (IndividualAddressListener listener : individualAddressListeners) {
@@ -929,8 +930,6 @@ public abstract class KNXBridgeBaseThingHandler extends BaseThingHandler impleme
     public void writeToKNX(String address, String dpt, Type value) {
 
         if (dpt != null && address != null && value != null) {
-
-            logger.trace("Writing a KNX telegram to '{}' with dpt '{}'", address, dpt);
 
             GroupAddress groupAddress = null;
             try {

@@ -22,6 +22,8 @@ import org.eclipse.smarthome.core.types.RefreshType;
 import org.eclipse.smarthome.core.types.State;
 import org.eclipse.smarthome.core.types.Type;
 import org.openhab.binding.knx.internal.dpt.KNXCoreTypeMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import tuwien.auto.calimero.DataUnitBuilder;
 import tuwien.auto.calimero.DeviceDescriptor;
@@ -34,6 +36,8 @@ import tuwien.auto.calimero.exception.KNXFormatException;
 import tuwien.auto.calimero.mgmt.PropertyAccess.PID;
 
 public abstract class PhysicalActorThingHandler extends KNXBaseThingHandler {
+
+    protected Logger logger = LoggerFactory.getLogger(PhysicalActorThingHandler.class);
 
     // List of all Configuration parameters
     public static final String READ = "read";

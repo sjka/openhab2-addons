@@ -16,6 +16,7 @@ import java.util.Set;
 import org.eclipse.smarthome.config.core.Configuration;
 import org.eclipse.smarthome.config.discovery.DiscoveryService;
 import org.eclipse.smarthome.core.autoupdate.AutoUpdateBindingConfigProvider;
+import org.eclipse.smarthome.core.items.ItemRegistry;
 import org.eclipse.smarthome.core.thing.ChannelUID;
 import org.eclipse.smarthome.core.thing.Thing;
 import org.eclipse.smarthome.core.thing.ThingTypeUID;
@@ -60,7 +61,16 @@ public class KNXHandlerFactory extends BaseThingHandlerFactory implements AutoUp
             KNXBindingConstants.THING_TYPE_VIRTUALSWITCH);
 
     private Map<ThingUID, ServiceRegistration<?>> discoveryServiceRegs = new HashMap<>();
+    protected ItemRegistry itemRegistry;
     protected ItemChannelLinkRegistry itemChannelLinkRegistry;
+
+    protected void setItemRegistry(ItemRegistry registry) {
+        itemRegistry = registry;
+    }
+
+    protected void unsetItemRegistry(ItemRegistry registry) {
+        itemRegistry = null;
+    }
 
     protected void setItemChannelLinkRegistry(ItemChannelLinkRegistry registry) {
         itemChannelLinkRegistry = registry;
@@ -138,7 +148,7 @@ public class KNXHandlerFactory extends BaseThingHandlerFactory implements AutoUp
             registerIndividualAddressDiscoveryService(handler);
             return handler;
         } else if (thing.getThingTypeUID().equals(KNXBindingConstants.THING_TYPE_GROUPADDRESS)) {
-            return new GroupAddressThingHandler(thing, itemChannelLinkRegistry);
+            return new GroupAddressThingHandler(thing, itemChannelLinkRegistry, itemRegistry);
         } else if (thing.getThingTypeUID().equals(KNXBindingConstants.THING_TYPE_GENERIC)) {
             return new GenericThingHandler(thing, itemChannelLinkRegistry);
         } else if (thing.getThingTypeUID().equals(KNXBindingConstants.THING_TYPE_SWITCH)) {
@@ -179,7 +189,7 @@ public class KNXHandlerFactory extends BaseThingHandlerFactory implements AutoUp
 
     private ThingUID getGAThingUID(ThingTypeUID thingTypeUID, ThingUID thingUID, Configuration configuration,
             ThingUID bridgeUID) {
-        String address = ((String) configuration.get(GroupAddressThingHandler.ADDRESS)).replace("/", "_");
+        String address = ((String) configuration.get(GroupAddressThingHandler.GROUP_ADDRESS)).replace("/", "_");
 
         if (thingUID == null) {
             thingUID = new ThingUID(thingTypeUID, address, bridgeUID.getId());

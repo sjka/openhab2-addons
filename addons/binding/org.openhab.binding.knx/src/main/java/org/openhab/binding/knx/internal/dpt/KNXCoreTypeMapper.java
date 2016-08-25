@@ -328,7 +328,6 @@ public class KNXCoreTypeMapper implements KNXTypeMapper {
             String value = translator.getValue();
 
             String id = translator.getType().getID();
-            logger.trace("toType datapoint DPT = " + datapoint.getDPT());
 
             int mainNumber = getMainNumber(id);
             if (mainNumber == -1) {
@@ -516,7 +515,6 @@ public class KNXCoreTypeMapper implements KNXTypeMapper {
      * @return the openHAB type (command or state) class or {@code null} if the datapoint type id is not supported.
      */
     static public Class<? extends Type> toTypeClass(String dptId) {
-        logger.trace("toTypeClass looking for dptId = " + dptId);
         return dptTypeMap.get(dptId);
     }
 
