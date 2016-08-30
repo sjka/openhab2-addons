@@ -71,7 +71,7 @@ public class GroupAddressThingHandler extends PhysicalActorThingHandler {
             if (groupaddress != null) {
                 groupAddresses.add(groupaddress);
                 if ((Boolean) getConfig().get(READ)) {
-                    logger.debug("Registering {} in read Addresses", address);
+                    logger.debug("Registering {} in read Addresses", groupaddress);
                     readAddresses.add(groupaddress);
                 }
             }
