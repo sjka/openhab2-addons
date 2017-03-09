@@ -102,7 +102,8 @@ public class KNXProject13Parser extends AbstractKNXProjectParser {
         }
 
         for (String anXML : xmlRepository.keySet()) {
-            if (!anXML.equals("project.xml") && !anXML.equals("knx_master.xml") && !anXML.contains("Hardware.xml")) {
+            if (!anXML.equals("project.xml") && !anXML.equals("knx_master.xml") && !anXML.contains("Hardware.xml")
+                    && !anXML.contains("Baggages.xml")) {
                 addXML(anXML, xmlRepository.get(anXML));
             }
         }
@@ -308,8 +309,8 @@ public class KNXProject13Parser extends AbstractKNXProjectParser {
                 }
             }
         } catch (Exception e) {
-            logger.error("An exception occurred while unmarshalling the KNX project data : '{}' : {}", e.getMessage(),
-                    e);
+            logger.error("An exception occurred while unmarshalling the KNX project data '{}' : '{}' : {}", xmlName,
+                    e.getMessage(), e);
         }
     }
 
