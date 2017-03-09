@@ -24,8 +24,10 @@ public enum KNXDPTException {
     MDT_CURRENT("7.012") {
         @Override
         public boolean verify(String dpt, String deviceManufacturer, String deviceName, String input) {
-            if (deviceManufacturer.contains("MDT") && dpt.equals("14.019") && input.equals("2 Bytes")) {
-                return true;
+            if (deviceManufacturer != null && dpt != null && input != null) {
+                if (deviceManufacturer.contains("MDT") && dpt.equals("14.019") && input.equals("2 Bytes")) {
+                    return true;
+                }
             }
 
             return false;
@@ -34,9 +36,11 @@ public enum KNXDPTException {
     ARCUS_TEMP("9.001") {
         @Override
         public boolean verify(Set<String> dpts, String deviceManufacturer, String deviceName, String input) {
-            if (deviceManufacturer.contains("Arcus-eds") && deviceName.contains("S8-WAQ")) {
-                if (dpts.contains("7.001") && dpts.contains("9.001")) {
-                    return true;
+            if (deviceManufacturer != null && dpts != null && deviceName != null) {
+                if (deviceManufacturer.contains("Arcus-eds") && deviceName.contains("S8-WAQ")) {
+                    if (dpts.contains("7.001") && dpts.contains("9.001")) {
+                        return true;
+                    }
                 }
             }
 
