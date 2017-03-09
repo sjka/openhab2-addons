@@ -21,7 +21,7 @@ import org.slf4j.LoggerFactory;
 
 public enum KNXDPTException {
 
-    MDT_CURRENT("9.021") {
+    MDT_CURRENT("7.012") {
         @Override
         public boolean verify(String dpt, String deviceManufacturer, String deviceName, String input) {
             if (deviceManufacturer.contains("MDT") && dpt.equals("14.019") && input.equals("2 Bytes")) {
