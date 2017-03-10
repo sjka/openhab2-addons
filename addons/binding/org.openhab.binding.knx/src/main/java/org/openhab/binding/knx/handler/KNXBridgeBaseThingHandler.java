@@ -1267,7 +1267,7 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
 
                     if (!fileName.equals("Catalog.xml") && fileName.contains(".xml")) {
 
-                        ByteArrayOutputStream fos = new ByteArrayOutputStream();
+                        ByteArrayOutputStream fos = new ByteArrayOutputStream((int) ze.getSize());
                         int len;
                         while ((len = zis.read(buffer)) > 0) {
                             fos.write(buffer, 0, len);
