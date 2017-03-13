@@ -17,7 +17,6 @@ public abstract class AbstractKNXProjectParser implements KNXProjectParser {
 
     private final Logger logger = LoggerFactory.getLogger(AbstractKNXProjectParser.class);
 
-    protected HashMap<String, String> xmlRepository = new HashMap<String, String>();
     public static DecimalFormat df = new DecimalFormat("000");
 
     @Override
@@ -25,13 +24,6 @@ public abstract class AbstractKNXProjectParser implements KNXProjectParser {
 
         for (String anXML : xmlRepository.keySet()) {
             addXML(anXML, xmlRepository.get(anXML));
-        }
-    }
-
-    @Override
-    public void addXML(String name, String content) {
-        if (name != null && content != null) {
-            xmlRepository.put(name, content);
         }
     }
 

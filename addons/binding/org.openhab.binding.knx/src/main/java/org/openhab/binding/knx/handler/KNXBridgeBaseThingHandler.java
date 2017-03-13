@@ -11,12 +11,14 @@ package org.openhab.binding.knx.handler;
 import static org.openhab.binding.knx.KNXBindingConstants.*;
 
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.nio.ByteBuffer;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -28,6 +30,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
@@ -146,7 +149,7 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
     // Data structures related to the knxproj parsing and thingprovider
     private KNXHandlerFactory factory;
     private KNXProjectParser knxParser;
-    private HashMap<File, HashMap<String, String>> knxProjects = new HashMap<File, HashMap<String, String>>();
+    private Set<File> knxProjects = new CopyOnWriteArraySet<File>();
     private HashMap<File, HashMap<ThingUID, Thing>> providedThings = new HashMap<File, HashMap<ThingUID, Thing>>();
     protected List<ProviderChangeListener<Thing>> providerListeners = new CopyOnWriteArrayList<ProviderChangeListener<Thing>>();
 
@@ -1197,7 +1200,7 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
 
     @Override
     public Iterable<File> getAllProjects() {
-        return knxProjects.keySet();
+        return knxProjects;
     }
 
     @Override
@@ -1220,7 +1223,7 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
             String knxProj = (String) getConfig().get(KNX_PROJ);
 
             if (knxProj != null && knxProj.equals(file.getName())) {
-                if (knxProjects.get(file) != null) {
+                if (knxProjects.contains(file)) {
                     logger.trace("Ah... removing the project file {}", file);
                     removeProject(file);
                 }
@@ -1254,9 +1257,12 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
             logger.trace("Unzipping the KNX Project file");
 
             byte[] buffer = new byte[1024];
-            HashMap<String, String> xmlRepository = new HashMap<String, String>();
+            HashMap<String, Path> xmlFiles = new HashMap<String, Path>();
 
             try {
+                Path tempDir = Files.createTempDirectory(file.getName());
+                tempDir.toFile().deleteOnExit();
+
                 ZipInputStream zis = new ZipInputStream(openInputStream);
                 ZipEntry ze = zis.getNextEntry();
 
@@ -1267,16 +1273,14 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
 
                     if (!fileName.equals("Catalog.xml") && fileName.contains(".xml")) {
 
-                        ByteArrayOutputStream fos = new ByteArrayOutputStream((int) ze.getSize());
+                        Path tempPath = Files.createTempFile(tempDir, fileName, ".tmp");
+                        tempPath.toFile().deleteOnExit();
+                        xmlFiles.put(fileName, tempPath);
+
+                        FileOutputStream fos = new FileOutputStream(tempPath.toString());
                         int len;
                         while ((len = zis.read(buffer)) > 0) {
                             fos.write(buffer, 0, len);
-                        }
-
-                        if (fileName.equals("Hardware.xml")) {
-                            xmlRepository.put(ze.getName(), fos.toString());
-                        } else {
-                            xmlRepository.put(fileName, fos.toString());
                         }
                         fos.close();
                     }
@@ -1288,33 +1292,49 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
 
                 logger.trace("Processing the XML Repository");
 
-                if (xmlRepository.get("knx_master.xml") != null) {
+                for (String anXml : xmlFiles.keySet()) {
+                    if (anXml.equals("knx_master.xml")) {
+                        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+                        factory.setNamespaceAware(true);
+                        DocumentBuilder builder = factory.newDocumentBuilder();
+                        Document doc = builder.parse(new ByteArrayInputStream(Files.readAllBytes(xmlFiles.get(anXml))));
+                        Element root = doc.getDocumentElement();
 
-                    DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-                    factory.setNamespaceAware(true);
-                    DocumentBuilder builder = factory.newDocumentBuilder();
-                    Document doc = builder
-                            .parse(new ByteArrayInputStream(xmlRepository.get("knx_master.xml").getBytes()));
-                    Element root = doc.getDocumentElement();
-
-                    switch (root.getNamespaceURI()) {
-                        case KNX_PROJECT_12: {
-                            // TODO : ETS4
-                            logger.warn("ETS4 project files are not supported");
-                            break;
+                        switch (root.getNamespaceURI()) {
+                            case KNX_PROJECT_12: {
+                                // TODO : ETS4
+                                logger.warn("ETS4 project files are not supported");
+                                break;
+                            }
+                            case KNX_PROJECT_13:
+                                // ETS5
+                                knxParser = new KNXProject13Parser();
+                                break;
                         }
-                        case KNX_PROJECT_13:
-                            // ETS5
-                            knxParser = new KNXProject13Parser();
+
                     }
-                } else {
-                    logger.warn("The KNX Project does not contain any master data");
                 }
 
                 if (knxParser != null) {
                     logger.trace("Feeding the XML Repository to the KNX Project Parser");
-                    knxProjects.put(file, xmlRepository);
-                    knxParser.addXML(xmlRepository);
+
+                    knxProjects.add(file);
+                    knxParser.addXML("knx_master.xml", new String(Files.readAllBytes(xmlFiles.get("knx_master.xml"))));
+                    knxParser.addXML("project.xml", new String(Files.readAllBytes(xmlFiles.get("project.xml"))));
+
+                    for (String anXml : xmlFiles.keySet()) {
+                        if (anXml.contains("Hardware.xml")) {
+                            knxParser.addXML(anXml, new String(Files.readAllBytes(xmlFiles.get(anXml))));
+                        }
+                    }
+
+                    for (String anXml : xmlFiles.keySet()) {
+                        if (!anXml.contains("knx_master.xml") && !anXml.contains("project.xml")
+                                && !anXml.contains("Hardware.xml") && !anXml.contains("Baggages.xml")) {
+                            knxParser.addXML(anXml, new String(Files.readAllBytes(xmlFiles.get(anXml))));
+                        }
+                    }
+
                     knxParser.postProcess();
 
                     if (factory != null) {
@@ -1423,6 +1443,8 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
                     knxScheduler = KNXThreadPoolFactory.getPrioritizedScheduledPool(getThing().getUID().getBindingId(),
                             oldThings.keySet().size() / 10);
 
+                } else {
+                    logger.warn("The KNX Project does not contain any master data");
                 }
 
                 knxParser = null;

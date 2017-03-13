@@ -113,8 +113,6 @@ public class KNXProject13Parser extends AbstractKNXProjectParser {
     public void addXML(String xmlName, String content) {
 
         try {
-            super.addXML(xmlName, content);
-
             if (xmlName != null && content != null) {
 
                 JAXBContext jaxbContext = JAXBContext.newInstance(KNX.class);
