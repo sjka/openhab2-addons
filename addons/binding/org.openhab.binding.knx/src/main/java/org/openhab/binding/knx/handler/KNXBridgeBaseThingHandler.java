@@ -1257,7 +1257,7 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
             logger.trace("Unzipping the KNX Project file");
 
             byte[] buffer = new byte[1024];
-            HashMap<String, Path> xmlFiles = new HashMap<String, Path>();
+            HashMap<Path, String> xmlFiles = new HashMap<Path, String>();
 
             try {
                 Path tempDir = Files.createTempDirectory(file.getName());
@@ -1275,7 +1275,7 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
 
                         Path tempPath = Files.createTempFile(tempDir, fileName, ".tmp");
                         tempPath.toFile().deleteOnExit();
-                        xmlFiles.put(fileName, tempPath);
+                        xmlFiles.put(tempPath, fileName);
 
                         FileOutputStream fos = new FileOutputStream(tempPath.toString());
                         int len;
@@ -1292,12 +1292,12 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
 
                 logger.trace("Processing the XML Repository");
 
-                for (String anXml : xmlFiles.keySet()) {
-                    if (anXml.equals("knx_master.xml")) {
+                for (Path anXml : xmlFiles.keySet()) {
+                    if (xmlFiles.get(anXml).equals("knx_master.xml")) {
                         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
                         factory.setNamespaceAware(true);
                         DocumentBuilder builder = factory.newDocumentBuilder();
-                        Document doc = builder.parse(new ByteArrayInputStream(Files.readAllBytes(xmlFiles.get(anXml))));
+                        Document doc = builder.parse(new ByteArrayInputStream(Files.readAllBytes(anXml)));
                         Element root = doc.getDocumentElement();
 
                         switch (root.getNamespaceURI()) {
@@ -1319,19 +1319,31 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
                     logger.trace("Feeding the XML Repository to the KNX Project Parser");
 
                     knxProjects.add(file);
-                    knxParser.addXML("knx_master.xml", new String(Files.readAllBytes(xmlFiles.get("knx_master.xml"))));
-                    knxParser.addXML("project.xml", new String(Files.readAllBytes(xmlFiles.get("project.xml"))));
-
-                    for (String anXml : xmlFiles.keySet()) {
-                        if (anXml.contains("Hardware.xml")) {
-                            knxParser.addXML(anXml, new String(Files.readAllBytes(xmlFiles.get(anXml))));
+                    for (Path anXml : xmlFiles.keySet()) {
+                        if (xmlFiles.get(anXml).equals("knx_master.xml")) {
+                            knxParser.addXML("knx_master.xml", new String(Files.readAllBytes(anXml)));
+                            break;
                         }
                     }
 
-                    for (String anXml : xmlFiles.keySet()) {
-                        if (!anXml.contains("knx_master.xml") && !anXml.contains("project.xml")
-                                && !anXml.contains("Hardware.xml") && !anXml.contains("Baggages.xml")) {
-                            knxParser.addXML(anXml, new String(Files.readAllBytes(xmlFiles.get(anXml))));
+                    for (Path anXml : xmlFiles.keySet()) {
+                        if (xmlFiles.get(anXml).equals("project.xml")) {
+                            knxParser.addXML("project.xml", new String(Files.readAllBytes(anXml)));
+                            break;
+                        }
+                    }
+
+                    for (Path anXml : xmlFiles.keySet()) {
+                        if (xmlFiles.get(anXml).equals("Hardware.xml")) {
+                            knxParser.addXML("Hardware.xml", new String(Files.readAllBytes(anXml)));
+                        }
+                    }
+
+                    for (Path anXml : xmlFiles.keySet()) {
+                        if (!xmlFiles.get(anXml).equals("knx_master.xml") && !xmlFiles.get(anXml).equals("project.xml")
+                                && !xmlFiles.get(anXml).equals("Hardware.xml")
+                                && !xmlFiles.get(anXml).equals("Baggages.xml")) {
+                            knxParser.addXML(xmlFiles.get(anXml), new String(Files.readAllBytes(anXml)));
                         }
                     }
 

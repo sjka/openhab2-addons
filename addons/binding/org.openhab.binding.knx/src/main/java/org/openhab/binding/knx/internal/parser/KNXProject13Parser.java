@@ -112,6 +112,8 @@ public class KNXProject13Parser extends AbstractKNXProjectParser {
     @Override
     public void addXML(String xmlName, String content) {
 
+        logger.trace("Adding XML '{}' to the parser", xmlName);
+
         try {
             if (xmlName != null && content != null) {
 
