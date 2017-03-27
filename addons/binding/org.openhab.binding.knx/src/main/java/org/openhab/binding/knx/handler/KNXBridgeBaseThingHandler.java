@@ -23,7 +23,6 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -138,9 +137,11 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
     private final Logger logger = LoggerFactory.getLogger(KNXBridgeBaseThingHandler.class);
 
     // Data structures related to the communication infrastructure
-    private Collection<GroupAddressListener> groupAddressListeners = new HashSet<GroupAddressListener>();
-    private Collection<IndividualAddressListener> individualAddressListeners = new HashSet<IndividualAddressListener>();
-    private Collection<KNXBusListener> knxBusListeners = new HashSet<KNXBusListener>();
+    private Set<GroupAddressListener> groupAddressListeners = new ConcurrentHashMap<GroupAddressListener, Boolean>()
+            .keySet(Boolean.TRUE);
+    private Set<IndividualAddressListener> individualAddressListeners = new ConcurrentHashMap<IndividualAddressListener, Boolean>()
+            .keySet(Boolean.TRUE);
+    private Set<KNXBusListener> knxBusListeners = new ConcurrentHashMap<KNXBusListener, Boolean>().keySet(Boolean.TRUE);
     private Collection<KNXTypeMapper> typeMappers;
     private LinkedBlockingQueue<RetryDatapoint> readDatapoints = new LinkedBlockingQueue<RetryDatapoint>();
     protected ConcurrentHashMap<IndividualAddress, Destination> destinations = new ConcurrentHashMap<IndividualAddress, Destination>();
