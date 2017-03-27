@@ -349,8 +349,6 @@ public class KNXGenericThingHandler extends BaseThingHandler
             return;
         }
 
-        Configuration channelConfiguration = getThing().getChannel(channelUID.getId()).getConfiguration();
-
         switch (channelUID.getId()) {
             case CHANNEL_RESET: {
                 if (address != null) {
@@ -359,35 +357,49 @@ public class KNXGenericThingHandler extends BaseThingHandler
                 break;
             }
             default: {
-                KNXChannelSelector selector = KNXChannelSelector.getValueSelectorFromChannelTypeId(
-                        getThing().getChannel(channelUID.getId()).getChannelTypeUID().getId());
+                Channel theChannel = getThing().getChannel(channelUID.getId());
+                if (theChannel != null) {
+                    KNXChannelSelector selector = KNXChannelSelector
+                            .getValueSelectorFromChannelTypeId(theChannel.getChannelTypeUID().getId());
 
-                if (selector != null) {
-                    try {
+                    if (selector != null) {
+                        try {
+                            Configuration channelConfiguration = getThing().getChannel(channelUID.getId())
+                                    .getConfiguration();
 
-                        Type convertedType = knxChannelSelectorProxy.convertType(selector, channelConfiguration,
-                                newState);
-                        logger.trace("State to Channel {} {} {} {}/{} : {} -> {}", channelUID.getId(),
-                                getThing().getChannel(channelUID.getId()).getConfiguration().get(DPT),
-                                getThing().getChannel(channelUID.getId()).getAcceptedItemType(),
-                                getThing().getChannel(channelUID.getId()).getConfiguration().get(READ),
-                                getThing().getChannel(channelUID.getId()).getConfiguration().get(WRITE), newState,
-                                convertedType);
-                        if (convertedType != null) {
-                            for (GroupAddress address : knxChannelSelectorProxy.getWriteAddresses(selector,
-                                    channelConfiguration, convertedType)) {
-                                ((KNXBridgeBaseThingHandler) getBridge().getHandler()).writeToKNX(address,
-                                        knxChannelSelectorProxy.getDPT(address, selector, channelConfiguration,
-                                                convertedType),
-                                        convertedType);
+                            if (channelConfiguration != null) {
+                                Type convertedType = knxChannelSelectorProxy.convertType(selector, channelConfiguration,
+                                        newState);
+                                logger.trace("State to Channel {} {} {} {}/{} : {} -> {}", channelUID.getId(),
+                                        getThing().getChannel(channelUID.getId()).getConfiguration().get(DPT),
+                                        getThing().getChannel(channelUID.getId()).getAcceptedItemType(),
+                                        getThing().getChannel(channelUID.getId()).getConfiguration().get(READ),
+                                        getThing().getChannel(channelUID.getId()).getConfiguration().get(WRITE),
+                                        newState, convertedType);
+                                if (convertedType != null) {
+                                    for (GroupAddress address : knxChannelSelectorProxy.getWriteAddresses(selector,
+                                            channelConfiguration, convertedType)) {
+                                        ((KNXBridgeBaseThingHandler) getBridge().getHandler()).writeToKNX(address,
+                                                knxChannelSelectorProxy.getDPT(address, selector, channelConfiguration,
+                                                        convertedType),
+                                                convertedType);
+                                    }
+                                }
+                            } else {
+                                logger.warn("The configuration of Channel '{}' is empty", channelUID.getId());
                             }
+
+                        } catch (KNXFormatException e) {
+                            logger.error("An exception occurred while writing to the KNX bus : '{}'", e.getMessage(),
+                                    e);
                         }
-                    } catch (KNXFormatException e) {
-                        logger.error("An exception occurred while writing to the KNX bus : '{}'", e.getMessage(), e);
+                    } else {
+                        logger.error("The Channel Type {} is not implemented",
+                                getThing().getChannel(channelUID.getId()).getChannelTypeUID().getId());
                     }
                 } else {
-                    logger.error("The Channel Type {} is not implemented",
-                            getThing().getChannel(channelUID.getId()).getChannelTypeUID().getId());
+                    logger.warn("The Channel with UID '{}' does not exist on Thing '{}'", channelUID.getId(),
+                            getThing().getUID());
                 }
                 break;
             }
@@ -414,30 +426,39 @@ public class KNXGenericThingHandler extends BaseThingHandler
             blockedChannels.remove(channelUID);
             return;
         }
-
-        Configuration channelConfiguration = getThing().getChannel(channelUID.getId()).getConfiguration();
-
         if (command instanceof RefreshType) {
 
             logger.debug("Refreshing channel {}", channelUID);
 
-            KNXChannelSelector selector = KNXChannelSelector.getValueSelectorFromChannelTypeId(
-                    getThing().getChannel(channelUID.getId()).getChannelTypeUID().getId());
+            Channel theChannel = getThing().getChannel(channelUID.getId());
+            if (theChannel != null) {
+                KNXChannelSelector selector = KNXChannelSelector
+                        .getValueSelectorFromChannelTypeId(theChannel.getChannelTypeUID().getId());
 
-            if (selector != null) {
-                try {
-                    for (GroupAddress address : knxChannelSelectorProxy.getReadAddresses(selector, channelConfiguration,
-                            command)) {
-                        scheduleReadJob(address,
-                                knxChannelSelectorProxy.getDPT(address, selector, channelConfiguration, command), true,
-                                BigDecimal.ZERO);
+                if (selector != null) {
+                    try {
+                        Configuration channelConfiguration = getThing().getChannel(channelUID.getId())
+                                .getConfiguration();
+
+                        if (channelConfiguration != null) {
+                            for (GroupAddress address : knxChannelSelectorProxy.getReadAddresses(selector,
+                                    channelConfiguration, command)) {
+                                scheduleReadJob(address, knxChannelSelectorProxy.getDPT(address, selector,
+                                        channelConfiguration, command), true, BigDecimal.ZERO);
+                            }
+                        } else {
+                            logger.warn("The configuration of channel '{}' is empty", channelUID.getId());
+                        }
+                    } catch (KNXFormatException e) {
+                        logger.error("An exception occurred while writing to the KNX bus : '{}'", e.getMessage(), e);
                     }
-                } catch (KNXFormatException e) {
-                    logger.error("An exception occurred while writing to the KNX bus : '{}'", e.getMessage(), e);
+                } else {
+                    logger.error("The Channel Type {} is not implemented",
+                            getThing().getChannel(channelUID.getId()).getChannelTypeUID().getId());
                 }
             } else {
-                logger.error("The Channel Type {} is not implemented",
-                        getThing().getChannel(channelUID.getId()).getChannelTypeUID().getId());
+                logger.warn("The Channel with UID '{}' does not exist on Thing '{}'", channelUID.getId(),
+                        getThing().getUID());
             }
         } else {
             switch (channelUID.getId()) {
@@ -449,38 +470,53 @@ public class KNXGenericThingHandler extends BaseThingHandler
                 }
                 default: {
 
-                    KNXChannelSelector selector = KNXChannelSelector.getValueSelectorFromChannelTypeId(
-                            getThing().getChannel(channelUID.getId()).getChannelTypeUID().getId());
+                    Channel theChannel = getThing().getChannel(channelUID.getId());
+                    if (theChannel != null) {
 
-                    if (selector != null) {
-                        try {
-                            Type convertedType = knxChannelSelectorProxy.convertType(selector, channelConfiguration,
-                                    command);
+                        KNXChannelSelector selector = KNXChannelSelector
+                                .getValueSelectorFromChannelTypeId(theChannel.getChannelTypeUID().getId());
 
-                            logger.trace("Command to Channel {} {} {} {}/{} : {} -> {}", channelUID.getId(),
-                                    getThing().getChannel(channelUID.getId()).getConfiguration().get(DPT),
-                                    getThing().getChannel(channelUID.getId()).getAcceptedItemType(),
-                                    getThing().getChannel(channelUID.getId()).getConfiguration().get(READ),
-                                    getThing().getChannel(channelUID.getId()).getConfiguration().get(WRITE), command,
-                                    convertedType);
+                        if (selector != null) {
+                            try {
+                                Configuration channelConfiguration = getThing().getChannel(channelUID.getId())
+                                        .getConfiguration();
 
-                            if (convertedType != null) {
-                                for (GroupAddress address : knxChannelSelectorProxy.getWriteAddresses(selector,
-                                        channelConfiguration, convertedType)) {
-                                    blockedChannels.add(channelUID);
-                                    ((KNXBridgeBaseThingHandler) getBridge().getHandler()).writeToKNX(address,
-                                            knxChannelSelectorProxy.getDPT(address, selector, channelConfiguration,
-                                                    convertedType),
-                                            convertedType);
+                                if (channelConfiguration != null) {
+                                    Type convertedType = knxChannelSelectorProxy.convertType(selector,
+                                            channelConfiguration, command);
+
+                                    logger.trace("Command to Channel {} {} {} {}/{} : {} -> {}", channelUID.getId(),
+                                            getThing().getChannel(channelUID.getId()).getConfiguration().get(DPT),
+                                            getThing().getChannel(channelUID.getId()).getAcceptedItemType(),
+                                            getThing().getChannel(channelUID.getId()).getConfiguration().get(READ),
+                                            getThing().getChannel(channelUID.getId()).getConfiguration().get(WRITE),
+                                            command, convertedType);
+
+                                    if (convertedType != null) {
+                                        for (GroupAddress address : knxChannelSelectorProxy.getWriteAddresses(selector,
+                                                channelConfiguration, convertedType)) {
+                                            blockedChannels.add(channelUID);
+                                            ((KNXBridgeBaseThingHandler) getBridge().getHandler())
+                                                    .writeToKNX(address,
+                                                            knxChannelSelectorProxy.getDPT(address, selector,
+                                                                    channelConfiguration, convertedType),
+                                                            convertedType);
+                                        }
+                                    }
+                                } else {
+                                    logger.warn("The configuration of channel '{}' is empty", channelUID.getId());
                                 }
+                            } catch (KNXFormatException e) {
+                                logger.error("An exception occurred while writing to the KNX bus : '{}'",
+                                        e.getMessage(), e);
                             }
-                        } catch (KNXFormatException e) {
-                            logger.error("An exception occurred while writing to the KNX bus : '{}'", e.getMessage(),
-                                    e);
+                        } else {
+                            logger.warn("The Channel Type {} is not implemented",
+                                    getThing().getChannel(channelUID.getId()).getChannelTypeUID().getId());
                         }
                     } else {
-                        logger.warn("The Channel Type {} is not implemented",
-                                getThing().getChannel(channelUID.getId()).getChannelTypeUID().getId());
+                        logger.warn("The Channel with UID '{}' does not exist on Thing '{}'", channelUID.getId(),
+                                getThing().getUID());
                     }
                 }
             }
