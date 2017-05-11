@@ -72,6 +72,7 @@ import org.openhab.binding.knx.internal.dpt.KNXCoreTypeMapper;
 import org.openhab.binding.knx.internal.dpt.KNXTypeMapper;
 import org.openhab.binding.knx.internal.factory.KNXHandlerFactory;
 import org.openhab.binding.knx.internal.factory.KNXThreadPoolFactory;
+import org.openhab.binding.knx.internal.handler.BridgeConfiguration;
 import org.openhab.binding.knx.internal.handler.RetryDatapoint;
 import org.openhab.binding.knx.internal.handler.TypeItemMap;
 import org.openhab.binding.knx.internal.logging.LogAdapter;
@@ -160,6 +161,8 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler
     private long errorsSinceStart;
     private long errorsSinceInterval;
 
+    private BridgeConfiguration config;
+
     public KNXBridgeBaseThingHandler(Bridge bridge, Collection<KNXTypeMapper> typeMappers, KNXHandlerFactory factory) {
         super(bridge);
         this.typeMappers = typeMappers;
@@ -172,6 +175,7 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler
         errorsSinceInterval = 0;
 
         shutdown = false;
+        config = getConfigAs(BridgeConfiguration.class);
         registerLogAdapter();
         initializeScheduler();
         scheduleConnectJob();
@@ -197,7 +201,7 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler
             if (!shutdown) {
                 connect();
             }
-        }, ((BigDecimal) getConfig().get(AUTO_RECONNECT_PERIOD)).intValue(), TimeUnit.SECONDS);
+        }, config.getAutoReconnectPeriod().intValue(), TimeUnit.SECONDS);
     }
 
     private void cancelConnectJob() {
@@ -277,11 +281,11 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler
     }
 
     public final int getReadRetriesLimit() {
-        return ((BigDecimal) getConfig().get(READ_RETRIES_LIMIT)).intValue();
+        return config.getReadRetriesLimit().intValue();
     }
 
     public final boolean isDiscoveryEnabled() {
-        return ((Boolean) getConfig().get(ENABLE_DISCOVERY));
+        return config.getEnableDiscovery().booleanValue();
     }
 
     /**
@@ -343,10 +347,10 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler
                 mp = new ManagementProceduresImpl(link);
 
                 mc = new ManagementClientImpl(link);
-                mc.setResponseTimeout((((BigDecimal) getConfig().get(RESPONSE_TIME_OUT)).intValue() / 1000));
+                mc.setResponseTimeout(config.getResponseTimeOut().intValue() / 1000);
 
                 pc = new ProcessCommunicatorImpl(link);
-                pc.setResponseTimeout(((BigDecimal) getConfig().get(RESPONSE_TIME_OUT)).intValue() / 1000);
+                pc.setResponseTimeout(config.getResponseTimeOut().intValue() / 1000);
                 pc.addProcessListener(pl);
 
                 link.addLinkListener(this);
@@ -370,8 +374,8 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler
             errorsSinceInterval = 0;
 
             if (busJob == null) {
-                busJob = knxScheduler.scheduleWithFixedDelay(new BusRunnable(), 0,
-                        ((BigDecimal) getConfig().get(READING_PAUSE)).intValue(), TimeUnit.MILLISECONDS);
+                busJob = knxScheduler.scheduleWithFixedDelay(new BusRunnable(), 0, config.getReadingPause().intValue(),
+                        TimeUnit.MILLISECONDS);
             }
 
             updateStatus(ThingStatus.ONLINE);
@@ -1029,7 +1033,7 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler
         try {
             openInputStream = FileUtils.openInputStream(file);
 
-            String knxProj = (String) getConfig().get(KNX_PROJ);
+            String knxProj = config.getKnxProj();
 
             if (knxProj != null && knxProj.equals(file.getName())) {
                 if (knxProjects.contains(file)) {
@@ -1352,10 +1356,8 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler
         if (!link.isOpen() && !(CloseEvent.USER_REQUEST == e.getInitiator()) && !shutdown) {
             logger.warn("KNX link has been lost (reason: {} on object {}) - reconnecting...", e.getReason(),
                     e.getSource().toString());
-            if (((BigDecimal) getConfig().get(AUTO_RECONNECT_PERIOD)).intValue() > 0) {
-                logger.info("KNX link will be retried in "
-                        + ((BigDecimal) getConfig().get(AUTO_RECONNECT_PERIOD)).intValue() + " seconds");
-
+            if (config.getAutoReconnectPeriod().intValue() > 0) {
+                logger.info("KNX link will be retried in " + config.getAutoReconnectPeriod().intValue() + " seconds");
                 if (connectJob.isDone()) {
                     scheduleConnectJob();
                 }

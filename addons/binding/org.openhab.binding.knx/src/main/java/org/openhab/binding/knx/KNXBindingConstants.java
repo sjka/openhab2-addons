@@ -54,11 +54,9 @@ public class KNXBindingConstants {
 
     // List of all Configuration parameters
     public final static String ADDRESS = "address";
-    public final static String AUTO_RECONNECT_PERIOD = "autoReconnectPeriod";
     public final static String CURRENT_GA = "currentGA";
     public final static String DPT = "dpt";
     public final static String DESCRIPTION = "description";
-    public final static String ENABLE_DISCOVERY = "enableDiscovery";
     public final static String ENERGY_GA = "energyGA";
     public final static String FETCH = "fetch";
     public final static String GROUPADDRESS = "groupaddress";
@@ -68,7 +66,6 @@ public class KNXBindingConstants {
     public final static String INTERVAL = "interval";
     public final static String IP_ADDRESS = "ipAddress";
     public final static String IP_CONNECTION_TYPE = "ipConnectionType";
-    public final static String KNX_PROJ = "knxProj";
     public final static String LOCAL_IP = "localIp";
     public final static String LOCAL_SOURCE_ADDRESS = "localSourceAddr";
     public final static String OPERATING_HOURS_GA = "operatingGA";
@@ -78,9 +75,6 @@ public class KNXBindingConstants {
     public final static String POSITION_GA = "positionGA";
     public final static String POSITION_STATUS_GA = "positionStatusGA";
     public final static String READ = "read";
-    public final static String READ_RETRIES_LIMIT = "readRetriesLimit";
-    public final static String READING_PAUSE = "readingPause";
-    public final static String RESPONSE_TIME_OUT = "responseTimeOut";
     public final static String SERIAL_PORT = "serialPort";
     public final static String SETPOINT_GA = "setpointGA";
     public final static String STATUS_GA = "statusGA";
