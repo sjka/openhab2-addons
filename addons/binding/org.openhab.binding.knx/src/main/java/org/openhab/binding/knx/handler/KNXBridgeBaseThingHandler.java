@@ -281,7 +281,12 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler
         return ((Boolean) getConfig().get(ENABLE_DISCOVERY));
     }
 
-    public abstract void establishConnection() throws KNXException;
+    /**
+     * Establish a communication channel to the KNX gateway.
+     *
+     * @throws KNXException
+     */
+    protected abstract void establishConnection() throws KNXException;
 
     private final Runnable connectRunnable = new Runnable() {
         @Override
