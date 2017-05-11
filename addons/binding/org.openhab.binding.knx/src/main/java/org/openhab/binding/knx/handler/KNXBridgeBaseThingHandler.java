@@ -201,8 +201,6 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
 
         LogManager.getManager().addWriter(null, logAdapter);
 
-        updateStatus(ThingStatus.UNKNOWN);
-
         shutdown = false;
 
         if (knxScheduler == null) {
