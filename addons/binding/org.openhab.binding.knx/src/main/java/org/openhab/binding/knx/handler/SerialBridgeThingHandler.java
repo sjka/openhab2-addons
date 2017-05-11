@@ -22,6 +22,7 @@ import org.slf4j.LoggerFactory;
 import gnu.io.CommPortIdentifier;
 import gnu.io.RXTXVersion;
 import tuwien.auto.calimero.exception.KNXException;
+import tuwien.auto.calimero.link.KNXNetworkLink;
 import tuwien.auto.calimero.link.KNXNetworkLinkFT12;
 import tuwien.auto.calimero.link.medium.TPSettings;
 
@@ -42,20 +43,16 @@ public class SerialBridgeThingHandler extends KNXBridgeBaseThingHandler {
     }
 
     @Override
-    public void establishConnection() throws KNXException {
+    public KNXNetworkLink establishConnection() throws KNXException {
         String serialPort = (String) getConfig().get(SERIAL_PORT);
 
         try {
 
             RXTXVersion.getVersion();
 
-            if (logger.isInfoEnabled()) {
-                if (link instanceof KNXNetworkLinkFT12) {
-                    logger.info("Establishing connection to KNX bus through FT1.2 on serial port {}.", serialPort);
-                }
-            }
+            logger.info("Establishing connection to KNX bus through FT1.2 on serial port {}.", serialPort);
 
-            link = new KNXNetworkLinkFT12(serialPort, new TPSettings());
+            return new KNXNetworkLinkFT12(serialPort, new TPSettings());
 
         } catch (NoClassDefFoundError e) {
             throw new KNXException(

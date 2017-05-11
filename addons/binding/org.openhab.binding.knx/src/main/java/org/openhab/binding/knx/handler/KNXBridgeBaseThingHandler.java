@@ -144,7 +144,7 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler
     private ProcessListenerEx pl = null;
     private ManagementProcedures mp;
     private ManagementClient mc;
-    protected KNXNetworkLink link;
+    private KNXNetworkLink link;
     private final LogAdapter logAdapter = new LogAdapter();
 
     // Data structures related to the various jobs
@@ -284,9 +284,8 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler
     /**
      * Establish a communication channel to the KNX gateway.
      *
-     * @throws KNXException
      */
-    protected abstract void establishConnection() throws KNXException;
+    protected abstract KNXNetworkLink establishConnection() throws KNXException;
 
     private final Runnable connectRunnable = new Runnable() {
         @Override
@@ -325,7 +324,7 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler
                 link.close();
             }
 
-            establishConnection();
+            link = establishConnection();
 
             pl = new ProcessListenerEx() {
 
