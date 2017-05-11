@@ -211,49 +211,49 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler
         LogManager.getManager().removeWriter(null, logAdapter);
     }
 
-    public boolean registerGroupAddressListener(GroupAddressListener listener) {
+    protected final boolean registerGroupAddressListener(GroupAddressListener listener) {
         if (listener == null) {
             throw new IllegalArgumentException("GroupAddressListener must not be null");
         }
         return groupAddressListeners.contains(listener) ? true : groupAddressListeners.add(listener);
     }
 
-    public boolean unregisterGroupAddressListener(GroupAddressListener listener) {
+    protected final boolean unregisterGroupAddressListener(GroupAddressListener listener) {
         if (listener == null) {
             throw new IllegalArgumentException("GroupAddressListener must not be null");
         }
         return groupAddressListeners.remove(listener);
     }
 
-    public boolean registerIndividualAddressListener(IndividualAddressListener listener) {
+    protected final boolean registerIndividualAddressListener(IndividualAddressListener listener) {
         if (listener == null) {
             throw new IllegalArgumentException("IndividualAddressListener must not be null");
         }
         return individualAddressListeners.contains(listener) ? true : individualAddressListeners.add(listener);
     }
 
-    public boolean unregisterIndividualAddressListener(IndividualAddressListener listener) {
+    protected final boolean unregisterIndividualAddressListener(IndividualAddressListener listener) {
         if (listener == null) {
             throw new IllegalArgumentException("IndividualAddressListener must not be null");
         }
         return individualAddressListeners.remove(listener);
     }
 
-    public void addKNXTypeMapper(KNXTypeMapper typeMapper) {
+    public final void addKNXTypeMapper(KNXTypeMapper typeMapper) {
         typeMappers.add(typeMapper);
     }
 
-    public void removeKNXTypeMapper(KNXTypeMapper typeMapper) {
+    public final void removeKNXTypeMapper(KNXTypeMapper typeMapper) {
         typeMappers.remove(typeMapper);
     }
 
-    public void registerKNXBusListener(KNXBusListener knxBusListener) {
+    public final void registerKNXBusListener(KNXBusListener knxBusListener) {
         if (knxBusListener != null) {
             knxBusListeners.add(knxBusListener);
         }
     }
 
-    public void unregisterKNXBusListener(KNXBusListener knxBusListener) {
+    public final void unregisterKNXBusListener(KNXBusListener knxBusListener) {
         if (knxBusListener != null) {
             knxBusListeners.remove(knxBusListener);
         }
@@ -269,17 +269,17 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler
         providerListeners.remove(listener);
     }
 
-    public int getReadRetriesLimit() {
+    public final int getReadRetriesLimit() {
         return ((BigDecimal) getConfig().get(READ_RETRIES_LIMIT)).intValue();
     }
 
-    public boolean isDiscoveryEnabled() {
+    public final boolean isDiscoveryEnabled() {
         return ((Boolean) getConfig().get(ENABLE_DISCOVERY));
     }
 
     public abstract void establishConnection() throws KNXException;
 
-    Runnable connectRunnable = new Runnable() {
+    private final Runnable connectRunnable = new Runnable() {
         @Override
         public void run() {
             if (shutdown) {
