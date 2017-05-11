@@ -11,7 +11,6 @@ package org.openhab.binding.knx.internal.parser;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
@@ -47,8 +46,6 @@ public enum KNXDPTException {
             return false;
         }
     };
-
-    private final static Logger logger = LoggerFactory.getLogger(KNXDPTRule.class);
 
     private String dpt;
 
@@ -105,7 +102,7 @@ public enum KNXDPTException {
         } else if (matches.size() == 1) {
             return ((KNXDPTException) matches.toArray()[0]).getDPT();
         } else {
-            logger.warn(
+            LoggerFactory.getLogger(KNXDPTRule.class).warn(
                     "More than one exception rule exists for dpt {}, manufacturer {}, device {}, constraint {} : {}",
                     dpt, deviceManufacturer, deviceName, input, matches);
         }
@@ -122,7 +119,7 @@ public enum KNXDPTException {
         } else if (matches.size() == 1) {
             return ((KNXDPTException) matches.toArray()[0]).getDPT();
         } else {
-            logger.warn(
+            LoggerFactory.getLogger(KNXDPTRule.class).warn(
                     "More than one exception rule exists for dpts {}, manufacturer {}, device {}, constraint {} : {}",
                     dpts, deviceManufacturer, deviceName, input, matches);
         }

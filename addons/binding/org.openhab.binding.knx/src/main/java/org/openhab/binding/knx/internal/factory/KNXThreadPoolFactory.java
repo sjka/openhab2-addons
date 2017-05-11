@@ -10,12 +10,9 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class KNXThreadPoolFactory {
-
-    private final static Logger logger = LoggerFactory.getLogger(KNXThreadPoolFactory.class);
 
     protected static final long THREAD_TIMEOUT = 65L;
     protected static final long THREAD_MONITOR_SLEEP = 60000;
@@ -34,14 +31,15 @@ public class KNXThreadPoolFactory {
                     ((ThreadPoolExecutor) pool).setKeepAliveTime(THREAD_TIMEOUT, TimeUnit.SECONDS);
                     ((ThreadPoolExecutor) pool).allowCoreThreadTimeOut(true);
                     pools.put(poolName, pool);
-                    logger.debug("Created scheduled thread pool '{}' of size {}",
-                            new Object[] { poolName, coreThreads });
+                    LoggerFactory.getLogger(KNXThreadPoolFactory.class).debug(
+                            "Created scheduled thread pool '{}' of size {}", new Object[] { poolName, coreThreads });
                 }
             }
         }
         if (pool instanceof ScheduledExecutorService) {
             if (coreThreads > 1) {
-                logger.debug("Updated the scheduled thread pool '{}' to a size of {}",
+                LoggerFactory.getLogger(KNXThreadPoolFactory.class).debug(
+                        "Updated the scheduled thread pool '{}' to a size of {}",
                         new Object[] { poolName, coreThreads });
                 ((ThreadPoolExecutor) pool).setCorePoolSize(coreThreads);
             }

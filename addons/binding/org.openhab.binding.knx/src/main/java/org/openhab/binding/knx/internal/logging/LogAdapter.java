@@ -28,7 +28,7 @@ import tuwien.auto.calimero.log.LogWriter;
  */
 public class LogAdapter extends LogWriter {
 
-    private final static Logger logger = LoggerFactory.getLogger("tuwien.auto.calimero");
+    private final Logger logger = LoggerFactory.getLogger("tuwien.auto.calimero");
 
     @Override
     public void write(String logService, LogLevel logLevel, String msg) {
