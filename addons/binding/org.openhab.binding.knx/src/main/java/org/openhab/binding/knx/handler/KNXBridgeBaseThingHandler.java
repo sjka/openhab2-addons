@@ -208,33 +208,29 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler
 
     public boolean registerGroupAddressListener(GroupAddressListener listener) {
         if (listener == null) {
-            throw new IllegalArgumentException("It's not allowed to pass a null GroupAddressListener.");
+            throw new IllegalArgumentException("GroupAddressListener must not be null");
         }
-
         return groupAddressListeners.contains(listener) ? true : groupAddressListeners.add(listener);
     }
 
     public boolean unregisterGroupAddressListener(GroupAddressListener listener) {
         if (listener == null) {
-            throw new IllegalArgumentException("It's not allowed to pass a null GroupAddressListener.");
+            throw new IllegalArgumentException("GroupAddressListener must not be null");
         }
-
         return groupAddressListeners.remove(listener);
     }
 
     public boolean registerIndividualAddressListener(IndividualAddressListener listener) {
         if (listener == null) {
-            throw new IllegalArgumentException("It's not allowed to pass a null IndividualAddressListener.");
+            throw new IllegalArgumentException("IndividualAddressListener must not be null");
         }
-
         return individualAddressListeners.contains(listener) ? true : individualAddressListeners.add(listener);
     }
 
     public boolean unregisterIndividualAddressListener(IndividualAddressListener listener) {
         if (listener == null) {
-            throw new IllegalArgumentException("It's not allowed to pass a null IndividualAddressListener.");
+            throw new IllegalArgumentException("IndividualAddressListener must not be null");
         }
-
         return individualAddressListeners.remove(listener);
     }
 
