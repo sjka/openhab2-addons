@@ -46,24 +46,7 @@ import org.apache.commons.lang.StringUtils;
 import org.eclipse.smarthome.config.core.Configuration;
 import org.eclipse.smarthome.core.common.registry.ProviderChangeListener;
 import org.eclipse.smarthome.core.items.GenericItem;
-import org.eclipse.smarthome.core.library.items.ColorItem;
-import org.eclipse.smarthome.core.library.items.ContactItem;
-import org.eclipse.smarthome.core.library.items.DateTimeItem;
-import org.eclipse.smarthome.core.library.items.DimmerItem;
-import org.eclipse.smarthome.core.library.items.NumberItem;
-import org.eclipse.smarthome.core.library.items.RollershutterItem;
-import org.eclipse.smarthome.core.library.items.StringItem;
-import org.eclipse.smarthome.core.library.items.SwitchItem;
-import org.eclipse.smarthome.core.library.types.DateTimeType;
 import org.eclipse.smarthome.core.library.types.DecimalType;
-import org.eclipse.smarthome.core.library.types.HSBType;
-import org.eclipse.smarthome.core.library.types.IncreaseDecreaseType;
-import org.eclipse.smarthome.core.library.types.OnOffType;
-import org.eclipse.smarthome.core.library.types.OpenClosedType;
-import org.eclipse.smarthome.core.library.types.PercentType;
-import org.eclipse.smarthome.core.library.types.StopMoveType;
-import org.eclipse.smarthome.core.library.types.StringType;
-import org.eclipse.smarthome.core.library.types.UpDownType;
 import org.eclipse.smarthome.core.thing.Bridge;
 import org.eclipse.smarthome.core.thing.Channel;
 import org.eclipse.smarthome.core.thing.ChannelUID;
@@ -89,6 +72,7 @@ import org.openhab.binding.knx.internal.dpt.KNXCoreTypeMapper;
 import org.openhab.binding.knx.internal.dpt.KNXTypeMapper;
 import org.openhab.binding.knx.internal.factory.KNXHandlerFactory;
 import org.openhab.binding.knx.internal.factory.KNXThreadPoolFactory;
+import org.openhab.binding.knx.internal.handler.TypeItemMap;
 import org.openhab.binding.knx.internal.logging.LogAdapter;
 import org.openhab.binding.knx.internal.parser.KNXProject13Parser;
 import org.openhab.binding.knx.internal.parser.KNXProjectParser;
@@ -146,7 +130,6 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler
     private Collection<KNXTypeMapper> typeMappers;
     private LinkedBlockingQueue<RetryDatapoint> readDatapoints = new LinkedBlockingQueue<RetryDatapoint>();
     protected ConcurrentHashMap<IndividualAddress, Destination> destinations = new ConcurrentHashMap<IndividualAddress, Destination>();
-    private static Map<Class<? extends Type>, Class<? extends GenericItem>> typeItemMap = new HashMap<Class<? extends Type>, Class<? extends GenericItem>>();
 
     // Data structures related to the knxproj parsing and thingprovider
     private KNXHandlerFactory factory;
@@ -180,17 +163,6 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler
         super(bridge);
         this.typeMappers = typeMappers;
         this.factory = factory;
-
-        typeItemMap.put(DateTimeType.class, DateTimeItem.class);
-        typeItemMap.put(DecimalType.class, NumberItem.class);
-        typeItemMap.put(HSBType.class, ColorItem.class);
-        typeItemMap.put(IncreaseDecreaseType.class, DimmerItem.class);
-        typeItemMap.put(OnOffType.class, SwitchItem.class);
-        typeItemMap.put(OpenClosedType.class, ContactItem.class);
-        typeItemMap.put(PercentType.class, NumberItem.class);
-        typeItemMap.put(StopMoveType.class, RollershutterItem.class);
-        typeItemMap.put(StringType.class, StringItem.class);
-        typeItemMap.put(UpDownType.class, RollershutterItem.class);
     }
 
     @Override
@@ -1210,7 +1182,7 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler
 
                                 if (dpt != null) {
                                     Class<? extends Type> type = toTypeClass(dpt);
-                                    Class<? extends GenericItem> itemType = typeItemMap.get(type);
+                                    Class<? extends GenericItem> itemType = TypeItemMap.get(type);
                                     String id = groupAddress.replace("/", "_");
 
                                     if (itemType != null) {
