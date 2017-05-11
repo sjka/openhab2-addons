@@ -228,7 +228,7 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
 
     public boolean registerGroupAddressListener(GroupAddressListener listener) {
         if (listener == null) {
-            throw new NullPointerException("It's not allowed to pass a null GroupAddressListener.");
+            throw new IllegalArgumentException("It's not allowed to pass a null GroupAddressListener.");
         }
 
         return groupAddressListeners.contains(listener) ? true : groupAddressListeners.add(listener);
@@ -236,7 +236,7 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
 
     public boolean unregisterGroupAddressListener(GroupAddressListener listener) {
         if (listener == null) {
-            throw new NullPointerException("It's not allowed to pass a null GroupAddressListener.");
+            throw new IllegalArgumentException("It's not allowed to pass a null GroupAddressListener.");
         }
 
         return groupAddressListeners.remove(listener);
@@ -244,7 +244,7 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
 
     public boolean registerIndividualAddressListener(IndividualAddressListener listener) {
         if (listener == null) {
-            throw new NullPointerException("It's not allowed to pass a null IndividualAddressListener.");
+            throw new IllegalArgumentException("It's not allowed to pass a null IndividualAddressListener.");
         }
 
         return individualAddressListeners.contains(listener) ? true : individualAddressListeners.add(listener);
@@ -252,7 +252,7 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
 
     public boolean unregisterIndividualAddressListener(IndividualAddressListener listener) {
         if (listener == null) {
-            throw new NullPointerException("It's not allowed to pass a null IndividualAddressListener.");
+            throw new IllegalArgumentException("It's not allowed to pass a null IndividualAddressListener.");
         }
 
         return individualAddressListeners.remove(listener);
