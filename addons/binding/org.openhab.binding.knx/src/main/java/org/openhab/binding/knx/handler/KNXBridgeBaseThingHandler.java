@@ -456,8 +456,7 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler
             synchronized (connectLock) {
                 while (!(getThing().getStatus() == ThingStatus.ONLINE)) {
                     if (connectJob.isDone()) {
-                        connectJob = knxScheduler.schedule(connectRunnable,
-                                ((BigDecimal) getConfig().get(AUTO_RECONNECT_PERIOD)).intValue(), TimeUnit.SECONDS);
+                        scheduleConnectJob();
                     }
                     try {
                         connectLock.wait();
