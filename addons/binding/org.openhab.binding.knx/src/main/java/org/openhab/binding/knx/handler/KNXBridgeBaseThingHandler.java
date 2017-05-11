@@ -260,13 +260,17 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler
     }
 
     @Override
-    public void addProviderChangeListener(ProviderChangeListener<Thing> listener) {
-        providerListeners.add(listener);
+    public final void addProviderChangeListener(ProviderChangeListener<Thing> listener) {
+        if (listener != null) {
+            providerListeners.add(listener);
+        }
     }
 
     @Override
-    public void removeProviderChangeListener(ProviderChangeListener<Thing> listener) {
-        providerListeners.remove(listener);
+    public final void removeProviderChangeListener(ProviderChangeListener<Thing> listener) {
+        if (listener != null) {
+            providerListeners.remove(listener);
+        }
     }
 
     public final int getReadRetriesLimit() {
