@@ -359,8 +359,6 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
 
                 @Override
                 public void indication(FrameEvent e) {
-                    CEMILData cemid = (CEMILData) e.getFrame();
-
                     if (intervalTimestamp == 0) {
                         intervalTimestamp = System.currentTimeMillis();
                         updateState(new ChannelUID(getThing().getUID(), KNXBindingConstants.ERRORS_STARTUP),
@@ -397,8 +395,6 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
 
                 @Override
                 public void confirmation(FrameEvent e) {
-                    CEMILData cemid = (CEMILData) e.getFrame();
-
                     if (intervalTimestamp == 0) {
                         intervalTimestamp = System.currentTimeMillis();
                         updateState(new ChannelUID(getThing().getUID(), KNXBindingConstants.ERRORS_STARTUP),
@@ -1028,7 +1024,7 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
                 destination = mc.createDestination(address, true);
 
                 if (authenticate) {
-                    int access = mc.authorize(destination, (ByteBuffer.allocate(4)).put((byte) 0xFF).put((byte) 0xFF)
+                    mc.authorize(destination, (ByteBuffer.allocate(4)).put((byte) 0xFF).put((byte) 0xFF)
                             .put((byte) 0xFF).put((byte) 0xFF).array());
                 }
 
@@ -1067,7 +1063,7 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
                 destination = mc.createDestination(address, true);
 
                 if (authenticate) {
-                    int access = mc.authorize(destination, (ByteBuffer.allocate(4)).put((byte) 0xFF).put((byte) 0xFF)
+                    mc.authorize(destination, (ByteBuffer.allocate(4)).put((byte) 0xFF).put((byte) 0xFF)
                             .put((byte) 0xFF).put((byte) 0xFF).array());
                 }
 
@@ -1121,7 +1117,7 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
                 destination = mc.createDestination(address, true);
 
                 if (authenticate) {
-                    int access = mc.authorize(destination, (ByteBuffer.allocate(4)).put((byte) 0xFF).put((byte) 0xFF)
+                    mc.authorize(destination, (ByteBuffer.allocate(4)).put((byte) 0xFF).put((byte) 0xFF)
                             .put((byte) 0xFF).put((byte) 0xFF).array());
                 }
 
