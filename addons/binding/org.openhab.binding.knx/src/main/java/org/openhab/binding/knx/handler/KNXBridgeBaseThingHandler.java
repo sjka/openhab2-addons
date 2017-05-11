@@ -72,6 +72,7 @@ import org.openhab.binding.knx.internal.dpt.KNXCoreTypeMapper;
 import org.openhab.binding.knx.internal.dpt.KNXTypeMapper;
 import org.openhab.binding.knx.internal.factory.KNXHandlerFactory;
 import org.openhab.binding.knx.internal.factory.KNXThreadPoolFactory;
+import org.openhab.binding.knx.internal.handler.RetryDatapoint;
 import org.openhab.binding.knx.internal.handler.TypeItemMap;
 import org.openhab.binding.knx.internal.logging.LogAdapter;
 import org.openhab.binding.knx.internal.parser.KNXProject13Parser;

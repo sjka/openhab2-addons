@@ -6,14 +6,14 @@
  * which accompanies this distribution, and is available at
  * http://www.eclipse.org/legal/epl-v10.html
  */
-package org.openhab.binding.knx.handler;
+package org.openhab.binding.knx.internal.handler;
 
 import tuwien.auto.calimero.datapoint.Datapoint;
 
 /**
  * @author Karel Goderis - Initial contribution
  */
-class RetryDatapoint {
+public class RetryDatapoint {
 
     private Datapoint datapoint;
     private int retries;
