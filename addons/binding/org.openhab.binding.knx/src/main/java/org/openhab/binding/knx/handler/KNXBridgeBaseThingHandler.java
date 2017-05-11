@@ -204,6 +204,21 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler
         }, config.getAutoReconnectPeriod().intValue(), TimeUnit.SECONDS);
     }
 
+    private void scheduleAndWaitForConnection() {
+        synchronized (connectLock) {
+            while (!(getThing().getStatus() == ThingStatus.ONLINE)) {
+                if (connectJob.isDone()) {
+                    scheduleConnectJob();
+                }
+                try {
+                    connectLock.wait();
+                } catch (InterruptedException e) {
+                    // Nothing to do here - we move on
+                }
+            }
+        }
+    }
+
     private void cancelConnectJob() {
         if (connectJob != null) {
             connectJob.cancel(true);
@@ -447,19 +462,7 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler
 
         @Override
         public void run() {
-
-            synchronized (connectLock) {
-                while (!(getThing().getStatus() == ThingStatus.ONLINE)) {
-                    if (connectJob.isDone()) {
-                        scheduleConnectJob();
-                    }
-                    try {
-                        connectLock.wait();
-                    } catch (InterruptedException e) {
-                        // Nothing to do here - we move on
-                    }
-                }
-            }
+            scheduleAndWaitForConnection();
 
             if (getThing().getStatus() == ThingStatus.ONLINE) {
 
@@ -683,18 +686,7 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler
             // ProcessCommunicator pc = getCommunicator();
             Datapoint datapoint = new CommandDP(address, getThing().getUID().toString(), 0, dpt);
 
-            synchronized (connectLock) {
-                while (!(getThing().getStatus() == ThingStatus.ONLINE)) {
-                    if (connectJob.isDone()) {
-                        scheduleConnectJob();
-                    }
-                    try {
-                        connectLock.wait();
-                    } catch (InterruptedException e) {
-                        // Nothing to do here
-                    }
-                }
-            }
+            scheduleAndWaitForConnection();
 
             if (datapoint != null && getThing().getStatus() == ThingStatus.ONLINE) {
                 try {
