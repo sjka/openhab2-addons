@@ -195,11 +195,10 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler
 
     @Override
     public void initialize() {
-
         errorsSinceStart = 0;
         errorsSinceInterval = 0;
 
-        LogManager.getManager().addWriter(null, logAdapter);
+        registerLogAdapter();
 
         shutdown = false;
 
@@ -223,6 +222,14 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler
 
         disconnect();
 
+        unregisterLogAdapter();
+    }
+
+    private void registerLogAdapter() {
+        LogManager.getManager().addWriter(null, logAdapter);
+    }
+
+    private void unregisterLogAdapter() {
         LogManager.getManager().removeWriter(null, logAdapter);
     }
 
