@@ -130,7 +130,8 @@ import tuwien.auto.calimero.process.ProcessListenerEx;
  *
  * @author Karel Goderis - Initial contribution
  */
-public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implements KNXProjectProvider, ThingProvider {
+public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler
+        implements KNXProjectProvider, ThingProvider, NetworkLinkListener {
 
     public final static int ERROR_INTERVAL_MINUTES = 5;
 
@@ -157,7 +158,6 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
     // Data structures related to the KNX protocol stack
     private ProcessCommunicator pc = null;
     private ProcessListenerEx pl = null;
-    private NetworkLinkListener nll = null;
     private ManagementProcedures mp;
     private ManagementClient mc;
     protected KNXNetworkLink link;
@@ -337,96 +337,6 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
 
             establishConnection();
 
-            nll = new NetworkLinkListener() {
-                @Override
-                public void linkClosed(CloseEvent e) {
-                    if (!link.isOpen() && !(CloseEvent.USER_REQUEST == e.getInitiator()) && !shutdown) {
-                        logger.warn("KNX link has been lost (reason: {} on object {}) - reconnecting...", e.getReason(),
-                                e.getSource().toString());
-                        if (((BigDecimal) getConfig().get(AUTO_RECONNECT_PERIOD)).intValue() > 0) {
-                            logger.info("KNX link will be retried in "
-                                    + ((BigDecimal) getConfig().get(AUTO_RECONNECT_PERIOD)).intValue() + " seconds");
-
-                            if (connectJob.isDone()) {
-                                logger.debug("NLL is scheduling a connection attempt");
-                                connectJob = knxScheduler.schedule(connectRunnable,
-                                        ((BigDecimal) getConfig().get(AUTO_RECONNECT_PERIOD)).intValue(),
-                                        TimeUnit.SECONDS);
-                            }
-                        }
-                    }
-                }
-
-                @Override
-                public void indication(FrameEvent e) {
-                    if (intervalTimestamp == 0) {
-                        intervalTimestamp = System.currentTimeMillis();
-                        updateState(new ChannelUID(getThing().getUID(), KNXBindingConstants.ERRORS_STARTUP),
-                                new DecimalType(errorsSinceStart));
-                        updateState(new ChannelUID(getThing().getUID(), KNXBindingConstants.ERRORS_INTERVAL),
-                                new DecimalType(errorsSinceInterval));
-                    } else if ((System.currentTimeMillis() - intervalTimestamp) > 60 * 1000 * ERROR_INTERVAL_MINUTES) {
-                        intervalTimestamp = System.currentTimeMillis();
-                        errorsSinceInterval = 0;
-                        updateState(new ChannelUID(getThing().getUID(), KNXBindingConstants.ERRORS_INTERVAL),
-                                new DecimalType(errorsSinceInterval));
-                    }
-
-                    int messageCode = e.getFrame().getMessageCode();
-
-                    switch (messageCode) {
-                        case CEMILData.MC_LDATA_IND: {
-                            CEMILData cemi = (CEMILData) e.getFrame();
-
-                            if (cemi.isRepetition()) {
-                                errorsSinceStart++;
-                                errorsSinceInterval++;
-
-                                updateState(new ChannelUID(getThing().getUID(), KNXBindingConstants.ERRORS_STARTUP),
-                                        new DecimalType(errorsSinceStart));
-                                updateState(new ChannelUID(getThing().getUID(), KNXBindingConstants.ERRORS_INTERVAL),
-                                        new DecimalType(errorsSinceInterval));
-
-                            }
-                            break;
-                        }
-                    }
-                }
-
-                @Override
-                public void confirmation(FrameEvent e) {
-                    if (intervalTimestamp == 0) {
-                        intervalTimestamp = System.currentTimeMillis();
-                        updateState(new ChannelUID(getThing().getUID(), KNXBindingConstants.ERRORS_STARTUP),
-                                new DecimalType(errorsSinceStart));
-                        updateState(new ChannelUID(getThing().getUID(), KNXBindingConstants.ERRORS_INTERVAL),
-                                new DecimalType(errorsSinceInterval));
-                    } else if ((System.currentTimeMillis() - intervalTimestamp) > 60 * 1000 * ERROR_INTERVAL_MINUTES) {
-                        intervalTimestamp = System.currentTimeMillis();
-                        errorsSinceInterval = 0;
-                        updateState(new ChannelUID(getThing().getUID(), KNXBindingConstants.ERRORS_INTERVAL),
-                                new DecimalType(errorsSinceInterval));
-                    }
-
-                    int messageCode = e.getFrame().getMessageCode();
-                    switch (messageCode) {
-                        case CEMILData.MC_LDATA_CON: {
-                            CEMILData cemi = (CEMILData) e.getFrame();
-                            if (!cemi.isPositiveConfirmation()) {
-                                errorsSinceStart++;
-                                errorsSinceInterval++;
-
-                                updateState(new ChannelUID(getThing().getUID(), KNXBindingConstants.ERRORS_STARTUP),
-                                        new DecimalType(errorsSinceStart));
-                                updateState(new ChannelUID(getThing().getUID(), KNXBindingConstants.ERRORS_INTERVAL),
-                                        new DecimalType(errorsSinceInterval));
-                            }
-                            break;
-                        }
-                    }
-                }
-            };
-
             pl = new ProcessListenerEx() {
 
                 @Override
@@ -460,7 +370,7 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
                 pc.setResponseTimeout(((BigDecimal) getConfig().get(RESPONSE_TIME_OUT)).intValue() / 1000);
                 pc.addProcessListener(pl);
 
-                link.addLinkListener(nll);
+                link.addLinkListener(this);
             }
 
             if (busJob != null) {
@@ -532,11 +442,8 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
             mc.detach();
         }
 
-        if (nll != null) {
-            link.removeLinkListener(nll);
-        }
-
         if (link != null) {
+            link.removeLinkListener(this);
             link.close();
         }
 
@@ -1534,5 +1441,92 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
 
     public ScheduledExecutorService getScheduler() {
         return knxScheduler;
+    }
+
+    @Override
+    public void linkClosed(CloseEvent e) {
+        if (!link.isOpen() && !(CloseEvent.USER_REQUEST == e.getInitiator()) && !shutdown) {
+            logger.warn("KNX link has been lost (reason: {} on object {}) - reconnecting...", e.getReason(),
+                    e.getSource().toString());
+            if (((BigDecimal) getConfig().get(AUTO_RECONNECT_PERIOD)).intValue() > 0) {
+                logger.info("KNX link will be retried in "
+                        + ((BigDecimal) getConfig().get(AUTO_RECONNECT_PERIOD)).intValue() + " seconds");
+
+                if (connectJob.isDone()) {
+                    logger.debug("NLL is scheduling a connection attempt");
+                    connectJob = knxScheduler.schedule(connectRunnable,
+                            ((BigDecimal) getConfig().get(AUTO_RECONNECT_PERIOD)).intValue(), TimeUnit.SECONDS);
+                }
+            }
+        }
+    }
+
+    @Override
+    public void indication(FrameEvent e) {
+        if (intervalTimestamp == 0) {
+            intervalTimestamp = System.currentTimeMillis();
+            updateState(new ChannelUID(getThing().getUID(), KNXBindingConstants.ERRORS_STARTUP),
+                    new DecimalType(errorsSinceStart));
+            updateState(new ChannelUID(getThing().getUID(), KNXBindingConstants.ERRORS_INTERVAL),
+                    new DecimalType(errorsSinceInterval));
+        } else if ((System.currentTimeMillis() - intervalTimestamp) > 60 * 1000 * ERROR_INTERVAL_MINUTES) {
+            intervalTimestamp = System.currentTimeMillis();
+            errorsSinceInterval = 0;
+            updateState(new ChannelUID(getThing().getUID(), KNXBindingConstants.ERRORS_INTERVAL),
+                    new DecimalType(errorsSinceInterval));
+        }
+
+        int messageCode = e.getFrame().getMessageCode();
+
+        switch (messageCode) {
+            case CEMILData.MC_LDATA_IND: {
+                CEMILData cemi = (CEMILData) e.getFrame();
+
+                if (cemi.isRepetition()) {
+                    errorsSinceStart++;
+                    errorsSinceInterval++;
+
+                    updateState(new ChannelUID(getThing().getUID(), KNXBindingConstants.ERRORS_STARTUP),
+                            new DecimalType(errorsSinceStart));
+                    updateState(new ChannelUID(getThing().getUID(), KNXBindingConstants.ERRORS_INTERVAL),
+                            new DecimalType(errorsSinceInterval));
+
+                }
+                break;
+            }
+        }
+    }
+
+    @Override
+    public void confirmation(FrameEvent e) {
+        if (intervalTimestamp == 0) {
+            intervalTimestamp = System.currentTimeMillis();
+            updateState(new ChannelUID(getThing().getUID(), KNXBindingConstants.ERRORS_STARTUP),
+                    new DecimalType(errorsSinceStart));
+            updateState(new ChannelUID(getThing().getUID(), KNXBindingConstants.ERRORS_INTERVAL),
+                    new DecimalType(errorsSinceInterval));
+        } else if ((System.currentTimeMillis() - intervalTimestamp) > 60 * 1000 * ERROR_INTERVAL_MINUTES) {
+            intervalTimestamp = System.currentTimeMillis();
+            errorsSinceInterval = 0;
+            updateState(new ChannelUID(getThing().getUID(), KNXBindingConstants.ERRORS_INTERVAL),
+                    new DecimalType(errorsSinceInterval));
+        }
+
+        int messageCode = e.getFrame().getMessageCode();
+        switch (messageCode) {
+            case CEMILData.MC_LDATA_CON: {
+                CEMILData cemi = (CEMILData) e.getFrame();
+                if (!cemi.isPositiveConfirmation()) {
+                    errorsSinceStart++;
+                    errorsSinceInterval++;
+
+                    updateState(new ChannelUID(getThing().getUID(), KNXBindingConstants.ERRORS_STARTUP),
+                            new DecimalType(errorsSinceStart));
+                    updateState(new ChannelUID(getThing().getUID(), KNXBindingConstants.ERRORS_INTERVAL),
+                            new DecimalType(errorsSinceInterval));
+                }
+                break;
+            }
+        }
     }
 }
