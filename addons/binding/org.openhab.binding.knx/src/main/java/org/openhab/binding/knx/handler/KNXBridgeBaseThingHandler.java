@@ -193,8 +193,11 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler
 
     private void scheduleConnectJob() {
         logger.trace("Scheduling the connection attempt to the KNX bus");
-        connectJob = knxScheduler.schedule(connectRunnable,
-                ((BigDecimal) getConfig().get(AUTO_RECONNECT_PERIOD)).intValue(), TimeUnit.SECONDS);
+        connectJob = knxScheduler.schedule(() -> {
+            if (!shutdown) {
+                connect();
+            }
+        }, ((BigDecimal) getConfig().get(AUTO_RECONNECT_PERIOD)).intValue(), TimeUnit.SECONDS);
     }
 
     private void cancelConnectJob() {
@@ -287,20 +290,7 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler
      */
     protected abstract KNXNetworkLink establishConnection() throws KNXException;
 
-    private final Runnable connectRunnable = new Runnable() {
-        @Override
-        public void run() {
-            if (shutdown) {
-                connectJob.cancel(true);
-                updateStatus(ThingStatus.ONLINE);
-            } else {
-                updateStatus(ThingStatus.OFFLINE);
-                connect();
-            }
-        }
-    };
-
-    public void connect() {
+    private void connect() {
         try {
 
             logger.trace("Connecting to the KNX bus");
@@ -401,7 +391,7 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler
         }
     }
 
-    public void disconnect() {
+    private void disconnect() {
 
         if (busJob != null) {
             busJob.cancel(true);
@@ -436,6 +426,7 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler
             link.close();
         }
 
+        updateStatus(ThingStatus.OFFLINE);
     }
 
     @Override
