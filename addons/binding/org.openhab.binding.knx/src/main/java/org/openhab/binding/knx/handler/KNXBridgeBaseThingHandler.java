@@ -71,7 +71,7 @@ import tuwien.auto.calimero.process.ProcessListenerEx;
  */
 public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implements NetworkLinkListener {
 
-    public final static int ERROR_INTERVAL_MINUTES = 5;
+    private static final int ERROR_INTERVAL_MINUTES = 5;
     private static final int MAX_SEND_ATTEMPTS = 2;
 
     private final Logger logger = LoggerFactory.getLogger(KNXBridgeBaseThingHandler.class);
