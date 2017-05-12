@@ -56,8 +56,8 @@ public class KNXHandlerFactory extends BaseThingHandlerFactory {
     public final static Collection<ThingTypeUID> SUPPORTED_THING_TYPES_UIDS = Lists.newArrayList(THING_TYPE_GENERIC,
             THING_TYPE_IP_BRIDGE, THING_TYPE_SERIAL_BRIDGE);
 
-    private Map<ThingUID, ServiceRegistration<?>> discoveryServiceRegs = new HashMap<>();
-    private Map<ThingUID, ServiceRegistration<?>> knxProjectProviderServiceRegs = new HashMap<>();
+    private final Map<ThingUID, ServiceRegistration> discoveryServiceRegs = new HashMap<>();
+    private final Map<ThingUID, ServiceRegistration> knxProjectProviderServiceRegs = new HashMap<>();
     private ItemChannelLinkRegistry itemChannelLinkRegistry;
     private ThingTypeRegistry thingTypeRegistry;
     private LocaleProvider localeProvider;
