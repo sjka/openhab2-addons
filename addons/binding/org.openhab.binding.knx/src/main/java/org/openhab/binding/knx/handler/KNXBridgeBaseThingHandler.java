@@ -89,7 +89,7 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
             .keySet(Boolean.TRUE);
     private Set<IndividualAddressListener> individualAddressListeners = new ConcurrentHashMap<IndividualAddressListener, Boolean>()
             .keySet(Boolean.TRUE);
-    private Set<KNXBusListener> knxBusListeners = new ConcurrentHashMap<KNXBusListener, Boolean>().keySet(Boolean.TRUE);
+    private Set<KNXBusListener> knxBusListeners = new CopyOnWriteArraySet<>();
     private final Collection<KNXTypeMapper> typeMappers = new CopyOnWriteArraySet<>();
 
     private LinkedBlockingQueue<RetryDatapoint> readDatapoints = new LinkedBlockingQueue<RetryDatapoint>();
