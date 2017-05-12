@@ -72,6 +72,7 @@ import tuwien.auto.calimero.process.ProcessListenerEx;
 public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implements NetworkLinkListener {
 
     public final static int ERROR_INTERVAL_MINUTES = 5;
+    private static final int MAX_SEND_ATTEMPTS = 2;
 
     private final Logger logger = LoggerFactory.getLogger(KNXBridgeBaseThingHandler.class);
 
@@ -436,46 +437,39 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
         }
     }
 
+
     public void writeToKNX(GroupAddress address, String dpt, Type value) {
-
-        if (dpt != null && address != null && value != null) {
-
-            // ProcessCommunicator pc = getCommunicator();
-            Datapoint datapoint = new CommandDP(address, getThing().getUID().toString(), 0, dpt);
-
-            scheduleAndWaitForConnection();
-
-            if (datapoint != null && getThing().getStatus() == ThingStatus.ONLINE) {
-                try {
-                    String mappedValue = toDPTValue(value, datapoint.getDPT());
-                    if (mappedValue != null) {
-                        processCommunicator.write(datapoint, mappedValue);
-                        logger.debug("Wrote value '{}' to datapoint '{}'", value, datapoint);
-                    } else {
-                        logger.debug("Value '{}' can not be mapped to datapoint '{}'", value, datapoint);
-                    }
-                } catch (KNXException e) {
-                    logger.debug(
-                            "Value '{}' could not be sent to the KNX bus using datapoint '{}' - retrying one time: {}",
-                            new Object[] { value, datapoint, e.getMessage() });
-                    try {
-                        // do a second try, maybe the reconnection was successful
-                        // pc = getCommunicator();
-                        processCommunicator.write(datapoint, toDPTValue(value, datapoint.getDPT()));
-                        logger.debug("Wrote value '{}' to datapoint '{}' on second try", value, datapoint);
-                    } catch (KNXException e1) {
-                        logger.error(
-                                "Value '{}' could not be sent to the KNX bus using datapoint '{}' - giving up after second try: {}",
-                                new Object[] { value, datapoint, e1.getMessage() });
-                        updateStatus(ThingStatus.OFFLINE);
-                    }
+        if (dpt == null || address == null || value == null) {
+            return;
+        }
+        scheduleAndWaitForConnection();
+        if (getThing().getStatus() != ThingStatus.ONLINE || processCommunicator == null || link == null) {
+            logger.debug("Cannot write to the KNX bus (processCommuicator: {}, link: {})",
+                    processCommunicator == null ? "Not OK" : "OK",
+                    link == null ? "Not OK" : (link.isOpen() ? "Open" : "Closed"));
+        }
+        Datapoint datapoint = new CommandDP(address, getThing().getUID().toString(), 0, dpt);
+        String mappedValue = toDPTValue(value, datapoint.getDPT());
+        if (mappedValue == null) {
+            logger.debug("Value '{}' cannot be mapped to datapoint '{}'", value, datapoint);
+            return;
+        }
+        for (int i = 0; i < MAX_SEND_ATTEMPTS; i++) {
+            try {
+                processCommunicator.write(datapoint, mappedValue);
+                logger.debug("Wrote value '{}' to datapoint '{}' ({}. attempt).", value, datapoint, i);
+                break;
+            } catch (KNXException e) {
+                if (i < MAX_SEND_ATTEMPTS - 1) {
+                    logger.debug("Value '{}' could not be sent to the KNX bus using datapoint '{}': {}. Will retry.",
+                            value, datapoint, e.getMessage());
+                } else {
+                    logger.debug("Value '{}' could not be sent to the KNX bus using datapoint '{}': {}. Giving up now.",
+                            value, datapoint, e.getMessage());
+                    disconnect();
+                    updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR, e.getMessage());
                 }
-            } else {
-                logger.error("Can not write to the KNX bus (pc {}, link {})",
-                        processCommunicator == null ? "Not OK" : "OK",
-                        link == null ? "Not OK" : (link.isOpen() ? "Open" : "Closed"));
             }
-
         }
     }
 
