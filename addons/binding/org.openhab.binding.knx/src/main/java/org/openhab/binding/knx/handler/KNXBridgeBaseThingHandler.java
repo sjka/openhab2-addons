@@ -349,7 +349,7 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
         // Nothing to do here
     }
 
-    public void readNextQueuedDatapoint() {
+    private void readNextQueuedDatapoint() {
         scheduleAndWaitForConnection();
         if (getThing().getStatus() != ThingStatus.ONLINE) {
             return;
