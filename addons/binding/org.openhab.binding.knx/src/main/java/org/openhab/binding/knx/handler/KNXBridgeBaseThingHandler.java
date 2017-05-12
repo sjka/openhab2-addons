@@ -565,14 +565,6 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
         return null;
     }
 
-    public String toDPTid(Class<? extends Type> type) {
-        return KNXCoreTypeMapper.toDPTid(type);
-    }
-
-    public Class<? extends Type> toTypeClass(String dpt) {
-        return KNXCoreTypeMapper.toTypeClass(dpt);
-    }
-
     /**
      * Transforms the raw KNX bus data of a given datapoint into an openHAB type (command or state)
      *
