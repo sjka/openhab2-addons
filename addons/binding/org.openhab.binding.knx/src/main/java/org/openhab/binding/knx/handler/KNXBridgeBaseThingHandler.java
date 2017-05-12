@@ -731,8 +731,7 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
     @Override
     public void linkClosed(CloseEvent e) {
         if (!link.isOpen() && !(CloseEvent.USER_REQUEST == e.getInitiator()) && !shutdown) {
-            logger.warn("KNX link has been lost (reason: {} on object {}) - reconnecting...", e.getReason(),
-                    e.getSource().toString());
+            logger.warn("KNX link has been lost (reason: {} on object {})", e.getReason(), e.getSource().toString());
             if (config.getAutoReconnectPeriod().intValue() > 0) {
                 logger.info("KNX link will be retried in " + config.getAutoReconnectPeriod().intValue() + " seconds");
                 if (connectJob.isDone()) {
