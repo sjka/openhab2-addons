@@ -437,7 +437,6 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
         }
     }
 
-
     public void writeToKNX(GroupAddress address, String dpt, Type value) {
         if (dpt == null || address == null || value == null) {
             return;
@@ -555,7 +554,7 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
     public synchronized IndividualAddress[] scanNetworkDevices(final int area, final int line) {
         try {
             return managementProcedures.scanNetworkDevices(area, line);
-        } catch (final Exception e) {
+        } catch (KNXException | InterruptedException e) {
             logger.error("Error scanning the KNX bus: {}", e.getMessage());
             if (logger.isDebugEnabled()) {
                 logger.error("", e);
@@ -567,7 +566,7 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
     public synchronized IndividualAddress[] scanNetworkRouters() {
         try {
             return managementProcedures.scanNetworkRouters();
-        } catch (final Exception e) {
+        } catch (KNXException | InterruptedException e) {
             logger.error("An exception occurred while scanning the KNX bus: {}", e.getMessage());
             if (logger.isDebugEnabled()) {
                 logger.error("", e);
