@@ -25,7 +25,7 @@ public class BridgeConfiguration {
     private String knxProj;
     private BigDecimal readingPause;
     private BigDecimal readRetriesLimit;
-    private BigDecimal responseTimeOut;
+    private BigDecimal responseTimeout;
 
     public BigDecimal getAutoReconnectPeriod() {
         return autoReconnectPeriod;
@@ -47,8 +47,8 @@ public class BridgeConfiguration {
         return readRetriesLimit;
     }
 
-    public BigDecimal getResponseTimeOut() {
-        return responseTimeOut;
+    public BigDecimal getResponseTimeout() {
+        return responseTimeout;
     }
 
 }

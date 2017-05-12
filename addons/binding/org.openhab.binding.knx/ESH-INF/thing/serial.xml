@@ -20,11 +20,11 @@
                 <required>false</required>
                 <default>50</default>
             </parameter>
-            <parameter name="responseTimeOut" type="integer">
-            	<label>Response Time Out</label>
-            	<description>Timeout in milliseconds to wait for a response from the KNX bus</description>
+            <parameter name="responseTimeout" type="integer">
+            	<label>Response Timeout</label>
+            	<description>Seconds to wait for a response from the KNX bus</description>
             	<required>false</required>
-            	<default>10000</default>
+            	<default>10</default>
         	</parameter>  
         	<parameter name="readRetriesLimit" type="integer">
             	<label>Read Retries Limit</label>

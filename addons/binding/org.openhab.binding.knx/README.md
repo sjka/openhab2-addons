@@ -34,7 +34,7 @@ The IP Gateway is the most commonly used way to connect to the KNX bus. At its b
 |localIp|N|Network address of the local host to be used to set up the connection to the KNX/IP gateway||
 |localSourceAddr|N|The group address for identification of this KNX/IP gateway within the KNX bus|0.0.0|
 |readingPause|N|Time in milliseconds of how long should be paused between two read requests to the bus during initialization|50|
-|responseTimeOut|N|Timeout in milliseconds to wait for a response from the KNX bus|10000|
+|responseTimeout|N|Timeout in seconds to wait for a response from the KNX bus|10|
 |readRetriesLimit|N|Limits the read retries while initialization from the KNX bus|3|
 |autoReconnectPeriod|N|Seconds between connect retries when KNX link has been lost, 0 means never retry|0|
 |enableDiscovery|N|Enable or disable automatic Individual Address discovery|true|
@@ -46,7 +46,7 @@ The *serial* bridge accepts the following configuration parameters:
 |----|--------|-----------|-------------|
 |serialPort|Y|The serial port to use for connecting to the KNX bus||
 |readingPause|N|Time in milliseconds of how long should be paused between two read requests to the bus during initialization|50|
-|responseTimeOut|N|Timeout in milliseconds to wait for a response from the KNX bus|10000|
+|responseTimeout|N|Timeout in seconds to wait for a response from the KNX bus|10|
 |readRetriesLimit|N|Limits the read retries while initialization from the KNX bus|3|
 |autoReconnectPeriod|N|Seconds between connect retries when KNX link has been lost, 0 means never retry|0|
 |enableDiscovery|N|Enable or disable automatic Individual Address discovery|true|
@@ -132,7 +132,7 @@ Added the Channel knx:generic:ip1:1_1_67:7_1_24 (Type Switch, DPT 1.001, true/tr
 demo.Things:
 
 ```
-Bridge knx:ip:ip1 [ ipAddress="192.168.0.10", portNumber=3671, localIp="192.168.0.166", ipConnectionType="TUNNEL", readingPause=50, responseTimeOut=1000, readRetriesLimit=3, autoReconnectPeriod=1,localSourceAddr="0.0.0", knxProj="Export 20161222.knxproj"] {
+Bridge knx:ip:ip1 [ ipAddress="192.168.0.10", portNumber=3671, localIp="192.168.0.166", ipConnectionType="TUNNEL", readingPause=50, responseTimeout=10, readRetriesLimit=3, autoReconnectPeriod=1,localSourceAddr="0.0.0", knxProj="Export 20161222.knxproj"] {
     Thing generic someactor {
         Type statusswitch :  someswitch [ switchGA="2/4/99", statusGA="2/4/100", read=true, interval=3600]
         Type number : ga_2_4_101 [ groupaddress="2/4/101", dpt="9.001", read=true, interval=3600]

@@ -281,10 +281,10 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
                 managementProcedures = new ManagementProceduresImpl(link);
 
                 managementClient = new ManagementClientImpl(link);
-                managementClient.setResponseTimeout(config.getResponseTimeOut().intValue() / 1000);
+                managementClient.setResponseTimeout(config.getResponseTimeout().intValue());
 
                 processCommunicator = new ProcessCommunicatorImpl(link);
-                processCommunicator.setResponseTimeout(config.getResponseTimeOut().intValue() / 1000);
+                processCommunicator.setResponseTimeout(config.getResponseTimeout().intValue());
                 processCommunicator.addProcessListener(processListener);
 
                 link.addLinkListener(this);
