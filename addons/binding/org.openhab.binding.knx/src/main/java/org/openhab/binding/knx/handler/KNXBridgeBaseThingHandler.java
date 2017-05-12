@@ -604,7 +604,7 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
         return getType(datapoint, asdu);
     }
 
-    synchronized public boolean isReachable(IndividualAddress address) {
+    public synchronized boolean isReachable(IndividualAddress address) {
         if (managementProcedures != null) {
             try {
                 return managementProcedures.isAddressOccupied(address);
@@ -618,7 +618,7 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
         return false;
     }
 
-    synchronized public void restartNetworkDevice(IndividualAddress address) {
+    public synchronized void restartNetworkDevice(IndividualAddress address) {
         if (address != null) {
             Destination destination = managementClient.createDestination(address, true);
             try {
@@ -632,7 +632,7 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
         }
     }
 
-    synchronized public IndividualAddress[] scanNetworkDevices(final int area, final int line) {
+    public synchronized IndividualAddress[] scanNetworkDevices(final int area, final int line) {
         try {
             return managementProcedures.scanNetworkDevices(area, line);
         } catch (final Exception e) {
@@ -644,7 +644,7 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
         return null;
     }
 
-    synchronized public IndividualAddress[] scanNetworkRouters() {
+    public synchronized IndividualAddress[] scanNetworkRouters() {
         try {
             return managementProcedures.scanNetworkRouters();
         } catch (final Exception e) {
@@ -656,7 +656,7 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
         return null;
     }
 
-    synchronized public byte[] readDeviceDescription(IndividualAddress address, int descType, boolean authenticate,
+    public synchronized byte[] readDeviceDescription(IndividualAddress address, int descType, boolean authenticate,
             long timeout) {
 
         Destination destination = null;
@@ -697,7 +697,7 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
         return result;
     }
 
-    synchronized public byte[] readDeviceMemory(IndividualAddress address, int startAddress, int bytes,
+    public synchronized byte[] readDeviceMemory(IndividualAddress address, int startAddress, int bytes,
             boolean authenticate, long timeout) {
 
         boolean success = false;
@@ -739,7 +739,7 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
         return result;
     }
 
-    synchronized public byte[] readDeviceProperties(IndividualAddress address, final int interfaceObjectIndex,
+    public synchronized byte[] readDeviceProperties(IndividualAddress address, final int interfaceObjectIndex,
             final int propertyId, final int start, final int elements, boolean authenticate, long timeout) {
 
         boolean success = false;
