@@ -21,6 +21,7 @@ import org.eclipse.smarthome.core.thing.Bridge;
 import org.eclipse.smarthome.core.thing.ThingStatus;
 import org.eclipse.smarthome.core.thing.ThingStatusDetail;
 import org.openhab.binding.knx.KNXBindingConstants;
+import org.openhab.binding.knx.internal.handler.BridgeConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -50,6 +51,7 @@ public class IPBridgeThingHandler extends KNXBridgeBaseThingHandler {
     private String localSource;
     private int port;
     private InetSocketAddress localEndPoint;
+    private Boolean useNAT;
 
     public IPBridgeThingHandler(Bridge bridge) {
         super(bridge);
@@ -57,14 +59,15 @@ public class IPBridgeThingHandler extends KNXBridgeBaseThingHandler {
 
     @Override
     public void initialize() {
-        ip = (String) getConfig().get(IP_ADDRESS);
-        port = ((BigDecimal) getConfig().get(PORT_NUMBER)).intValue();
         localSource = (String) getConfig().get(LOCAL_SOURCE_ADDRESS);
 
         String connectionTypeString = (String) getConfig().get(IP_CONNECTION_TYPE);
         if (StringUtils.isNotBlank(connectionTypeString)) {
             if (MODE_TUNNEL.equalsIgnoreCase(connectionTypeString)) {
+                ip = (String) getConfig().get(IP_ADDRESS);
+                port = ((BigDecimal) getConfig().get(PORT_NUMBER)).intValue();
                 ipConnectionType = KNXNetworkLinkIP.TUNNELING;
+                useNAT = getConfigAs(BridgeConfiguration.class).getUseNAT();
             } else if (MODE_ROUTER.equalsIgnoreCase(connectionTypeString)) {
                 ipConnectionType = KNXNetworkLinkIP.ROUTING;
                 if (StringUtils.isBlank(ip)) {
@@ -85,11 +88,13 @@ public class IPBridgeThingHandler extends KNXBridgeBaseThingHandler {
         }
 
         try {
-            if (StringUtils.isNotBlank((String) getConfig().get(LOCAL_IP))) {
-                localEndPoint = new InetSocketAddress((String) getConfig().get(LOCAL_IP), 0);
-            } else {
-                InetAddress localHost = InetAddress.getLocalHost();
-                localEndPoint = new InetSocketAddress(localHost, 0);
+            if (!useNAT) {
+                if (StringUtils.isNotBlank((String) getConfig().get(LOCAL_IP))) {
+                    localEndPoint = new InetSocketAddress((String) getConfig().get(LOCAL_IP), 0);
+                } else {
+                    InetAddress localHost = InetAddress.getLocalHost();
+                    localEndPoint = new InetSocketAddress(localHost, 0);
+                }
             }
         } catch (UnknownHostException uhe) {
             updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_ERROR,
@@ -104,7 +109,7 @@ public class IPBridgeThingHandler extends KNXBridgeBaseThingHandler {
     public KNXNetworkLink establishConnection() throws KNXException, InterruptedException {
         logger.debug("Establishing connection to KNX bus on {}:{} in mode {}.", ip, port, connectionTypeToString());
         TPSettings settings = new TPSettings(new IndividualAddress(localSource));
-        return new KNXNetworkLinkIP(ipConnectionType, localEndPoint, new InetSocketAddress(ip, port), false, settings);
+        return new KNXNetworkLinkIP(ipConnectionType, localEndPoint, new InetSocketAddress(ip, port), useNAT, settings);
 
     }
 

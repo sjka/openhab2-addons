@@ -24,6 +24,8 @@ The binding itself does not require any special configuration.
 
 ## Bridge Configuration
 
+### IP Gateway
+
 The IP Gateway is the most commonly used way to connect to the KNX bus. At its base, the *ip* bridge accepts the following configuration parameters:
 
 |Name|Required|Description|Default value|
@@ -39,6 +41,9 @@ The IP Gateway is the most commonly used way to connect to the KNX bus. At its b
 |autoReconnectPeriod|N|Seconds between connect retries when KNX link has been lost, 0 means never retry|0|
 |enableDiscovery|N|Enable or disable automatic Individual Address discovery|true|
 |knxProj|N|KNX Project File (knxproj) to parse and add to the Things managed by this Bridge||
+|useNAT|Y|Whether there is network address translation between the server and the gateway|false|
+
+### Serial Gateway
 
 The *serial* bridge accepts the following configuration parameters:
 

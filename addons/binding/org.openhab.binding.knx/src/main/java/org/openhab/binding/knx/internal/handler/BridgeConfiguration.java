@@ -26,6 +26,7 @@ public class BridgeConfiguration {
     private BigDecimal readingPause;
     private BigDecimal readRetriesLimit;
     private BigDecimal responseTimeout;
+    private Boolean useNAT;
 
     public BigDecimal getAutoReconnectPeriod() {
         return autoReconnectPeriod;
@@ -49,6 +50,10 @@ public class BridgeConfiguration {
 
     public BigDecimal getResponseTimeout() {
         return responseTimeout;
+    }
+
+    public Boolean getUseNAT() {
+        return useNAT;
     }
 
 }

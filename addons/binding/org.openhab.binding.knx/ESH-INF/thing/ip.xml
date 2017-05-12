@@ -41,6 +41,12 @@
                 <description>The group address for identification of this KNX/IP gateway within the KNX bus. Default is 0.0.0</description>
                 <required>false</required>
             </parameter>
+            <parameter name="useNAT" type="boolean">
+                <label>Use NAT</label>
+                <description>Set to "true" when having network address translation between this server and the gateway</description>
+                <default>false</default>
+                <required>true</required>
+            </parameter>
             <parameter name="readingPause" type="integer">
                 <label>Reading Pause</label>
                 <description>Time in milliseconds of how long should be paused between two read requests to the bus during initialization</description>
