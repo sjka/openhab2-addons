@@ -14,8 +14,10 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Hashtable;
+import java.util.Locale;
 import java.util.Map;
 
+import org.apache.commons.lang.RandomStringUtils;
 import org.eclipse.smarthome.config.core.Configuration;
 import org.eclipse.smarthome.config.discovery.DiscoveryService;
 import org.eclipse.smarthome.core.i18n.LocaleProvider;
@@ -163,7 +165,8 @@ public class KNXHandlerFactory extends BaseThingHandlerFactory {
         if (address != null) {
             return new ThingUID(thingTypeUID, address.replace(".", "_"), bridgeUID.getId());
         } else {
-            return null;
+            String randomID = RandomStringUtils.randomAlphabetic(16).toLowerCase(Locale.ENGLISH);
+            return new ThingUID(thingTypeUID, randomID, bridgeUID.getId());
         }
     }
 
