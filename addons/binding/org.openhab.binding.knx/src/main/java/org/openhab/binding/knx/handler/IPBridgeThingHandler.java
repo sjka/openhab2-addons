@@ -37,7 +37,7 @@ import tuwien.auto.calimero.link.medium.TPSettings;
  */
 public class IPBridgeThingHandler extends KNXBridgeBaseThingHandler {
 
-    private Logger logger = LoggerFactory.getLogger(IPBridgeThingHandler.class);
+    private final Logger logger = LoggerFactory.getLogger(IPBridgeThingHandler.class);
 
     // the ip connection type for connecting to the KNX bus. Could be either TUNNEL or ROUTING
     private int ipConnectionType;
