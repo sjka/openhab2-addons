@@ -85,7 +85,7 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
     private Set<KNXBusListener> knxBusListeners = new CopyOnWriteArraySet<>();
     private final Collection<KNXTypeMapper> typeMappers = new CopyOnWriteArraySet<>();
 
-    private LinkedBlockingQueue<RetryDatapoint> readDatapoints = new LinkedBlockingQueue<RetryDatapoint>();
+    private final LinkedBlockingQueue<RetryDatapoint> readDatapoints = new LinkedBlockingQueue<RetryDatapoint>();
     protected ConcurrentHashMap<IndividualAddress, Destination> destinations = new ConcurrentHashMap<IndividualAddress, Destination>();
 
     // Data structures related to the KNX protocol stack
@@ -287,12 +287,10 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
                 link.addLinkListener(this);
             }
 
-            readDatapoints = new LinkedBlockingQueue<RetryDatapoint>();
-
             errorsSinceStart = 0;
             errorsSinceInterval = 0;
 
-            busJob = knxScheduler.scheduleWithFixedDelay(() -> readInitialValues(), 0,
+            busJob = knxScheduler.scheduleWithFixedDelay(() -> readNextQueuedDatapoint(), 0,
                     config.getReadingPause().intValue(), TimeUnit.MILLISECONDS);
 
             updateStatus(ThingStatus.ONLINE);
@@ -312,6 +310,7 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
 
     private void closeConnection() {
         logger.debug("Bridge {} is disconnecting from the KNX bus", getThing().getUID());
+        readDatapoints.clear();
         if (busJob != null) {
             busJob.cancel(true);
             busJob = null;
@@ -350,37 +349,29 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
         // Nothing to do here
     }
 
-    public void readInitialValues() {
+    public void readNextQueuedDatapoint() {
         scheduleAndWaitForConnection();
-
-        if (getThing().getStatus() == ThingStatus.ONLINE) {
-
-            RetryDatapoint datapoint = readDatapoints.poll();
-
-            if (datapoint != null) {
-                datapoint.incrementRetries();
-
-                boolean success = false;
-                try {
-                    logger.trace("Sending a Group Read Request telegram for destination '{}'",
-                            datapoint.getDatapoint().getMainAddress());
-                    processCommunicator.read(datapoint.getDatapoint());
-                    success = true;
-                } catch (KNXException e) {
-                    logger.warn("Cannot read value for datapoint '{}' from KNX bus: {}",
+        if (getThing().getStatus() != ThingStatus.ONLINE) {
+            return;
+        }
+        RetryDatapoint datapoint = readDatapoints.poll();
+        if (datapoint != null) {
+            datapoint.incrementRetries();
+            try {
+                logger.trace("Sending a Group Read Request telegram for {}", datapoint.getDatapoint().getMainAddress());
+                processCommunicator.read(datapoint.getDatapoint());
+            } catch (KNXException e) {
+                if (datapoint.getRetries() < datapoint.getLimit()) {
+                    readDatapoints.add(datapoint);
+                    logger.debug("Could not read value for datapoint {}: {}. Going to retry.",
                             datapoint.getDatapoint().getMainAddress(), e.getMessage());
-                } catch (InterruptedException e) {
-                    logger.debug("Interrupted sending KNX read request");
-                    return;
+                } else {
+                    logger.warn("Giving up reading datapoint {}, the number of maximum retries ({}) is reached.",
+                            datapoint.getDatapoint().getMainAddress(), datapoint.getLimit());
                 }
-                if (!success) {
-                    if (datapoint.getRetries() < datapoint.getLimit()) {
-                        readDatapoints.add(datapoint);
-                    } else {
-                        logger.debug("Giving up reading datapoint {} - nubmer of maximum retries ({}) reached.",
-                                datapoint.getDatapoint().getMainAddress(), datapoint.getLimit());
-                    }
-                }
+            } catch (InterruptedException e) {
+                logger.debug("Interrupted sending KNX read request");
+                return;
             }
         }
     }
@@ -389,7 +380,6 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
         synchronized (this) {
             if (datapoint != null) {
                 RetryDatapoint retryDatapoint = new RetryDatapoint(datapoint, retriesLimit);
-
                 if (!readDatapoints.contains(retryDatapoint)) {
                     readDatapoints.add(retryDatapoint);
                 }
