@@ -58,11 +58,11 @@ public class KNXHandlerFactory extends BaseThingHandlerFactory {
 
     private final Map<ThingUID, ServiceRegistration> discoveryServiceRegs = new HashMap<>();
     private final Map<ThingUID, ServiceRegistration> knxProjectProviderServiceRegs = new HashMap<>();
+    private final Collection<KNXTypeMapper> typeMappers = new HashSet<KNXTypeMapper>();
+    private final Collection<KNXBridgeBaseThingHandler> bridgeHandlers = new HashSet<KNXBridgeBaseThingHandler>();
     private ItemChannelLinkRegistry itemChannelLinkRegistry;
     private ThingTypeRegistry thingTypeRegistry;
     private LocaleProvider localeProvider;
-    private Collection<KNXTypeMapper> typeMappers = new HashSet<KNXTypeMapper>();
-    private Collection<KNXBridgeBaseThingHandler> bridges = new HashSet<KNXBridgeBaseThingHandler>();
 
     protected void setItemChannelLinkRegistry(ItemChannelLinkRegistry registry) {
         itemChannelLinkRegistry = registry;
@@ -90,14 +90,14 @@ public class KNXHandlerFactory extends BaseThingHandlerFactory {
 
     public void addKNXTypeMapper(KNXTypeMapper typeMapper) {
         typeMappers.add(typeMapper);
-        for (KNXBridgeBaseThingHandler aBridge : bridges) {
+        for (KNXBridgeBaseThingHandler aBridge : bridgeHandlers) {
             aBridge.addKNXTypeMapper(typeMapper);
         }
     }
 
     public void removeKNXTypeMapper(KNXTypeMapper typeMapper) {
         typeMappers.remove(typeMapper);
-        for (KNXBridgeBaseThingHandler aBridge : bridges) {
+        for (KNXBridgeBaseThingHandler aBridge : bridgeHandlers) {
             aBridge.removeKNXTypeMapper(typeMapper);
         }
     }
