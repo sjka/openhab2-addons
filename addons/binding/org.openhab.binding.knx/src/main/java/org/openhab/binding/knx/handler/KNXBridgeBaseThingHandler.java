@@ -444,12 +444,7 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
 
             for (GroupAddressListener listener : groupAddressListeners) {
                 if (listener.listensTo(destination)) {
-                    if (listener instanceof IndividualAddressListener
-                            && !((IndividualAddressListener) listener).listensTo(source)) {
-                        listener.onGroupRead(this, source, destination, asdu);
-                    } else {
-                        listener.onGroupRead(this, source, destination, asdu);
-                    }
+                    listener.onGroupRead(this, source, destination, asdu);
                 }
             }
 
@@ -484,12 +479,7 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
 
             for (GroupAddressListener listener : groupAddressListeners) {
                 if (listener.listensTo(destination)) {
-                    if (listener instanceof IndividualAddressListener
-                            && !((IndividualAddressListener) listener).listensTo(source)) {
-                        listener.onGroupReadResponse(this, source, destination, asdu);
-                    } else {
-                        listener.onGroupReadResponse(this, source, destination, asdu);
-                    }
+                    listener.onGroupReadResponse(this, source, destination, asdu);
                 }
             }
 
