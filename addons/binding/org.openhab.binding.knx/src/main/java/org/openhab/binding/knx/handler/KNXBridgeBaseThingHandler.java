@@ -38,7 +38,6 @@ import org.openhab.binding.knx.KNXBusListener;
 import org.openhab.binding.knx.TelegramListener;
 import org.openhab.binding.knx.internal.dpt.KNXCoreTypeMapper;
 import org.openhab.binding.knx.internal.dpt.KNXTypeMapper;
-import org.openhab.binding.knx.internal.factory.KNXHandlerFactory;
 import org.openhab.binding.knx.internal.factory.KNXThreadPoolFactory;
 import org.openhab.binding.knx.internal.handler.BridgeConfiguration;
 import org.openhab.binding.knx.internal.handler.RetryDatapoint;
@@ -92,7 +91,6 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
             .keySet(Boolean.TRUE);
     private Set<KNXBusListener> knxBusListeners = new ConcurrentHashMap<KNXBusListener, Boolean>().keySet(Boolean.TRUE);
     private final Collection<KNXTypeMapper> typeMappers = new CopyOnWriteArraySet<>();
-    private final KNXHandlerFactory factory;
 
     private LinkedBlockingQueue<RetryDatapoint> readDatapoints = new LinkedBlockingQueue<RetryDatapoint>();
     protected ConcurrentHashMap<IndividualAddress, Destination> destinations = new ConcurrentHashMap<IndividualAddress, Destination>();
@@ -120,9 +118,8 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
 
     private BridgeConfiguration config;
 
-    public KNXBridgeBaseThingHandler(Bridge bridge, KNXHandlerFactory factory) {
+    public KNXBridgeBaseThingHandler(Bridge bridge) {
         super(bridge);
-        this.factory = factory;
     }
 
     @Override

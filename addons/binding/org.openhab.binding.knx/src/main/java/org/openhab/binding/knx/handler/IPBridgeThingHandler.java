@@ -18,7 +18,6 @@ import java.net.UnknownHostException;
 import org.apache.commons.lang.StringUtils;
 import org.eclipse.smarthome.core.thing.Bridge;
 import org.openhab.binding.knx.KNXBindingConstants;
-import org.openhab.binding.knx.internal.factory.KNXHandlerFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,8 +48,8 @@ public class IPBridgeThingHandler extends KNXBridgeBaseThingHandler {
     // the group address used within the KNX bus
     private String localsource;
 
-    public IPBridgeThingHandler(Bridge bridge, KNXHandlerFactory factory) {
-        super(bridge, factory);
+    public IPBridgeThingHandler(Bridge bridge) {
+        super(bridge);
     }
 
     @Override
