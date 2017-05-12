@@ -270,6 +270,10 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
     /**
      * Establish a communication channel to the KNX gateway.
      *
+     * @return an established link to the KNX gateway. Must not be <code>null</code>
+     * @throws KNXException if the link could not be established
+     * @throws InterruptedException if it occurs
+     *
      */
     protected abstract KNXNetworkLink establishConnection() throws KNXException, InterruptedException;
 
@@ -280,18 +284,16 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
             logger.debug("Bridge {} is connecting to the KNX bus", getThing().getUID());
             link = establishConnection();
 
-            if (link != null) {
-                managementProcedures = new ManagementProceduresImpl(link);
+            managementProcedures = new ManagementProceduresImpl(link);
 
-                managementClient = new ManagementClientImpl(link);
-                managementClient.setResponseTimeout(config.getResponseTimeout().intValue());
+            managementClient = new ManagementClientImpl(link);
+            managementClient.setResponseTimeout(config.getResponseTimeout().intValue());
 
-                processCommunicator = new ProcessCommunicatorImpl(link);
-                processCommunicator.setResponseTimeout(config.getResponseTimeout().intValue());
-                processCommunicator.addProcessListener(processListener);
+            processCommunicator = new ProcessCommunicatorImpl(link);
+            processCommunicator.setResponseTimeout(config.getResponseTimeout().intValue());
+            processCommunicator.addProcessListener(processListener);
 
-                link.addLinkListener(this);
-            }
+            link.addLinkListener(this);
 
             errorsSinceStart = 0;
             errorsSinceInterval = 0;
