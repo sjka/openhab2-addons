@@ -637,19 +637,6 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
         });
     }
 
-    public enum EventSource {
-        RUNTIME,
-        BUS,
-        EMPTY;
-    }
-
-    protected class LoggedEvent {
-        long timeStamp;
-        EventSource source;
-        ChannelUID channel;
-        Type type;
-    }
-
     public ScheduledExecutorService getScheduler() {
         return knxScheduler;
     }
