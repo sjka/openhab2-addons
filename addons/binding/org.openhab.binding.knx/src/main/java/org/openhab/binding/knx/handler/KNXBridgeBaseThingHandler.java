@@ -757,71 +757,53 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
 
     @Override
     public void indication(FrameEvent e) {
-        if (intervalTimestamp == 0) {
-            intervalTimestamp = System.currentTimeMillis();
-            updateState(new ChannelUID(getThing().getUID(), KNXBindingConstants.ERRORS_STARTUP),
-                    new DecimalType(errorsSinceStart));
-            updateState(new ChannelUID(getThing().getUID(), KNXBindingConstants.ERRORS_INTERVAL),
-                    new DecimalType(errorsSinceInterval));
-        } else if ((System.currentTimeMillis() - intervalTimestamp) > 60 * 1000 * ERROR_INTERVAL_MINUTES) {
-            intervalTimestamp = System.currentTimeMillis();
-            errorsSinceInterval = 0;
-            updateState(new ChannelUID(getThing().getUID(), KNXBindingConstants.ERRORS_INTERVAL),
-                    new DecimalType(errorsSinceInterval));
-        }
-
-        int messageCode = e.getFrame().getMessageCode();
-
-        switch (messageCode) {
-            case CEMILData.MC_LDATA_IND: {
-                CEMILData cemi = (CEMILData) e.getFrame();
-
-                if (cemi.isRepetition()) {
-                    errorsSinceStart++;
-                    errorsSinceInterval++;
-
-                    updateState(new ChannelUID(getThing().getUID(), KNXBindingConstants.ERRORS_STARTUP),
-                            new DecimalType(errorsSinceStart));
-                    updateState(new ChannelUID(getThing().getUID(), KNXBindingConstants.ERRORS_INTERVAL),
-                            new DecimalType(errorsSinceInterval));
-
-                }
-                break;
-            }
-        }
+        handleFrameEvent(e);
     }
 
     @Override
     public void confirmation(FrameEvent e) {
-        if (intervalTimestamp == 0) {
-            intervalTimestamp = System.currentTimeMillis();
-            updateState(new ChannelUID(getThing().getUID(), KNXBindingConstants.ERRORS_STARTUP),
-                    new DecimalType(errorsSinceStart));
-            updateState(new ChannelUID(getThing().getUID(), KNXBindingConstants.ERRORS_INTERVAL),
-                    new DecimalType(errorsSinceInterval));
-        } else if ((System.currentTimeMillis() - intervalTimestamp) > 60 * 1000 * ERROR_INTERVAL_MINUTES) {
-            intervalTimestamp = System.currentTimeMillis();
-            errorsSinceInterval = 0;
-            updateState(new ChannelUID(getThing().getUID(), KNXBindingConstants.ERRORS_INTERVAL),
-                    new DecimalType(errorsSinceInterval));
-        }
+        handleFrameEvent(e);
+    }
 
+    private void handleFrameEvent(FrameEvent e) {
+        checkErrorCounterTimeouts();
         int messageCode = e.getFrame().getMessageCode();
         switch (messageCode) {
-            case CEMILData.MC_LDATA_CON: {
-                CEMILData cemi = (CEMILData) e.getFrame();
-                if (!cemi.isPositiveConfirmation()) {
-                    errorsSinceStart++;
-                    errorsSinceInterval++;
-
-                    updateState(new ChannelUID(getThing().getUID(), KNXBindingConstants.ERRORS_STARTUP),
-                            new DecimalType(errorsSinceStart));
-                    updateState(new ChannelUID(getThing().getUID(), KNXBindingConstants.ERRORS_INTERVAL),
-                            new DecimalType(errorsSinceInterval));
+            case CEMILData.MC_LDATA_IND:
+                if (((CEMILData) e.getFrame()).isRepetition()) {
+                    incrementErrorCounter();
                 }
                 break;
-            }
+            case CEMILData.MC_LDATA_CON:
+                if (!((CEMILData) e.getFrame()).isPositiveConfirmation()) {
+                    incrementErrorCounter();
+                }
+                break;
         }
+    }
+
+    private void checkErrorCounterTimeouts() {
+        if (intervalTimestamp == 0) {
+            intervalTimestamp = System.nanoTime();
+            updateErrorCounterChannels();
+        } else if ((System.nanoTime() - intervalTimestamp) > TimeUnit.MINUTES.toNanos(ERROR_INTERVAL_MINUTES)) {
+            intervalTimestamp = System.nanoTime();
+            errorsSinceInterval = 0;
+            updateErrorCounterChannels();
+        }
+    }
+
+    private void incrementErrorCounter() {
+        errorsSinceStart++;
+        errorsSinceInterval++;
+        updateErrorCounterChannels();
+    }
+
+    private void updateErrorCounterChannels() {
+        updateState(new ChannelUID(getThing().getUID(), KNXBindingConstants.ERRORS_STARTUP),
+                new DecimalType(errorsSinceStart));
+        updateState(new ChannelUID(getThing().getUID(), KNXBindingConstants.ERRORS_INTERVAL),
+                new DecimalType(errorsSinceInterval));
     }
 
     public String getETSProjectFilename() {
