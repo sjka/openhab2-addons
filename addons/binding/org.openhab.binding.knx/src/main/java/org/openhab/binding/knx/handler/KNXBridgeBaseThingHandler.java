@@ -25,6 +25,7 @@ import org.eclipse.smarthome.core.library.types.DecimalType;
 import org.eclipse.smarthome.core.thing.Bridge;
 import org.eclipse.smarthome.core.thing.ChannelUID;
 import org.eclipse.smarthome.core.thing.ThingStatus;
+import org.eclipse.smarthome.core.thing.ThingStatusDetail;
 import org.eclipse.smarthome.core.thing.binding.BaseBridgeHandler;
 import org.eclipse.smarthome.core.types.Command;
 import org.eclipse.smarthome.core.types.State;
@@ -52,14 +53,12 @@ import tuwien.auto.calimero.datapoint.CommandDP;
 import tuwien.auto.calimero.datapoint.Datapoint;
 import tuwien.auto.calimero.exception.KNXException;
 import tuwien.auto.calimero.exception.KNXIllegalArgumentException;
-import tuwien.auto.calimero.exception.KNXRemoteException;
 import tuwien.auto.calimero.exception.KNXTimeoutException;
 import tuwien.auto.calimero.link.KNXLinkClosedException;
 import tuwien.auto.calimero.link.KNXNetworkLink;
 import tuwien.auto.calimero.link.NetworkLinkListener;
 import tuwien.auto.calimero.log.LogManager;
 import tuwien.auto.calimero.mgmt.Destination;
-import tuwien.auto.calimero.mgmt.KNXDisconnectException;
 import tuwien.auto.calimero.mgmt.ManagementClient;
 import tuwien.auto.calimero.mgmt.ManagementClientImpl;
 import tuwien.auto.calimero.mgmt.ManagementProcedures;
@@ -295,19 +294,17 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
                     config.getReadingPause().intValue(), TimeUnit.MILLISECONDS);
 
             updateStatus(ThingStatus.ONLINE);
-
         } catch (KNXException e) {
-            logger.error("An exception occurred while connecting to the KNX bus: {}", e.getMessage(), e);
-            disconnect();
-            updateStatus(ThingStatus.OFFLINE);
+            logger.error("Error connecting to the KNX bus: {}", e.getMessage());
+            if (logger.isDebugEnabled()) {
+                logger.error("", e);
+            }
+            closeConnection();
+            updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR, e.getLocalizedMessage());
         }
 
-        try {
-            synchronized (connectLock) {
-                connectLock.notifyAll();
-            }
-        } catch (Exception e) {
-            logger.error("An exception occurred while connecting to the KNX bus : '{}'", e.getMessage(), e);
+        synchronized (connectLock) {
+            connectLock.notifyAll();
         }
     }
 
@@ -615,11 +612,12 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
             try {
                 return managementProcedures.isAddressOccupied(address);
             } catch (KNXException | InterruptedException e) {
-                logger.error("An exception occurred while trying to reach address '{}' : {}", address.toString(),
-                        e.getMessage(), e);
+                logger.error("Could not reach address '{}': {}", address.toString(), e.getMessage());
+                if (logger.isDebugEnabled()) {
+                    logger.error("", e);
+                }
             }
         }
-
         return false;
     }
 
@@ -629,8 +627,10 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
             try {
                 managementClient.restart(destination);
             } catch (KNXTimeoutException | KNXLinkClosedException e) {
-                logger.error("An exception occurred while resetting the device with address {} : {}", address,
-                        e.getMessage(), e);
+                logger.error("Could not reset the device with address '{}': {}", address, e.getMessage());
+                if (logger.isDebugEnabled()) {
+                    logger.error("", e);
+                }
             }
         }
     }
@@ -639,9 +639,11 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
         try {
             return managementProcedures.scanNetworkDevices(area, line);
         } catch (final Exception e) {
-            logger.error("An exception occurred while scanning the KNX bus : '{}'", e.getMessage(), e);
+            logger.error("Error scanning the KNX bus: {}", e.getMessage());
+            if (logger.isDebugEnabled()) {
+                logger.error("", e);
+            }
         }
-
         return null;
     }
 
@@ -649,9 +651,11 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
         try {
             return managementProcedures.scanNetworkRouters();
         } catch (final Exception e) {
-            logger.error("An exception occurred while scanning the KNX bus : '{}'", e.getMessage(), e);
+            logger.error("An exception occurred while scanning the KNX bus: {}", e.getMessage());
+            if (logger.isDebugEnabled()) {
+                logger.error("", e);
+            }
         }
-
         return null;
     }
 
@@ -676,13 +680,16 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
                 }
 
                 result = managementClient.readDeviceDesc(destination, descType);
-                logger.debug("Reading Device Description of {} yields {} bytes", address,
+                logger.debug("Reading device description of {} yields {} bytes", address,
                         result == null ? null : result.length);
 
                 success = true;
             } catch (Exception e) {
-                logger.error("An exception occurred while trying to read the device description for address '{}' : {}",
-                        address.toString(), e.getMessage(), e);
+                logger.error("Could not read the device description for address '{}': {}", address.toString(),
+                        e.getMessage());
+                if (logger.isDebugEnabled()) {
+                    logger.error("", e);
+                }
             } finally {
                 if (destination != null) {
                     destination.destroy();
@@ -719,32 +726,19 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
                         new Object[] { bytes, startAddress, address, result == null ? null : result.length });
 
                 success = true;
-            } catch (KNXTimeoutException e) {
-                logger.error("An KNXTimeoutException occurred while trying to read the memory for address '{}' : {}",
-                        address.toString(), e.getMessage(), e);
-            } catch (KNXRemoteException e) {
-                logger.error("An KNXRemoteException occurred while trying to read the memory for '{}' : {}",
-                        address.toString(), e.getMessage(), e);
-            } catch (KNXDisconnectException e) {
-                logger.error("An KNXDisconnectException occurred while trying to read the memory for '{}' : {}",
-                        address.toString(), e.getMessage(), e);
-            } catch (KNXLinkClosedException e) {
-                logger.error("An KNXLinkClosedException occurred while trying to read the memory for '{}' : {}",
-                        address.toString(), e.getMessage(), e);
             } catch (KNXException e) {
-                logger.error("An KNXException occurred while trying to read the memory for '{}' : {}",
-                        address.toString(), e.getMessage(), e);
+                logger.error("Error reading the memory for '{}': {}", address.toString(), e.getMessage());
+                if (logger.isDebugEnabled()) {
+                    logger.error("", e);
+                }
             } catch (InterruptedException e) {
-                logger.error("An exception occurred while trying to read the memory for '{}' : {}", address.toString(),
-                        e.getMessage(), e);
-                e.printStackTrace();
+                logger.trace("Interripted while reading the memory for '{}': {}", address.toString(), e.getMessage());
             } finally {
                 if (destination != null) {
                     destination.destroy();
                 }
             }
         }
-
         return result;
     }
 
@@ -774,7 +768,10 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
                         interfaceObjectIndex, address, result == null ? null : result.length });
                 success = true;
             } catch (final Exception e) {
-                logger.error("An exception occurred while reading a device property : {}", e.getMessage(), e);
+                logger.error("Could not read a device property: {}", e.getMessage());
+                if (logger.isDebugEnabled()) {
+                    logger.error("", e);
+                }
             } finally {
                 if (destination != null) {
                     destination.destroy();
