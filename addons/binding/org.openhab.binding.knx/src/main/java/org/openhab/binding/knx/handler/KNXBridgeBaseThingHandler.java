@@ -194,6 +194,7 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
     private void cancelConnectJob() {
         if (connectJob != null) {
             connectJob.cancel(true);
+            connectJob = null;
         }
     }
 
