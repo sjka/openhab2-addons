@@ -128,10 +128,10 @@ public class KNXHandlerFactory extends BaseThingHandlerFactory {
     @Override
     protected ThingHandler createHandler(Thing thing) {
         if (thing.getThingTypeUID().equals(THING_TYPE_IP_BRIDGE)) {
-            IPBridgeThingHandler handler = new IPBridgeThingHandler((Bridge) thing, typeMappers, this);
+            IPBridgeThingHandler handler = new IPBridgeThingHandler((Bridge) thing, this);
             return handler;
         } else if (thing.getThingTypeUID().equals(THING_TYPE_SERIAL_BRIDGE)) {
-            SerialBridgeThingHandler handler = new SerialBridgeThingHandler((Bridge) thing, typeMappers, this);
+            SerialBridgeThingHandler handler = new SerialBridgeThingHandler((Bridge) thing, this);
             return handler;
         } else if (thing.getThingTypeUID().equals(THING_TYPE_GENERIC)) {
             return new KNXGenericThingHandler(thing, itemChannelLinkRegistry);
@@ -205,7 +205,9 @@ public class KNXHandlerFactory extends BaseThingHandlerFactory {
     public ThingHandler registerHandler(Thing thing) {
         ThingHandler handler = super.registerHandler(thing);
         if (handler instanceof KNXBridgeBaseThingHandler) {
-            KNXBridgeBaseThingHandler bridgeHandler = (KNXBridgeBaseThingHandler) thing.getHandler();
+            KNXBridgeBaseThingHandler bridgeHandler = (KNXBridgeBaseThingHandler) handler;
+            bridgeHandlers.add(bridgeHandler);
+            typeMappers.forEach(it -> bridgeHandler.addKNXTypeMapper(it));
             registerProjectProviderService(bridgeHandler);
             registerAddressDiscoveryService(bridgeHandler);
         }
@@ -217,6 +219,7 @@ public class KNXHandlerFactory extends BaseThingHandlerFactory {
         if (thing.getHandler() instanceof KNXBridgeBaseThingHandler) {
             unregisterProjectProviderService(thing);
             unregisterAddressDiscoveryService(thing);
+            bridgeHandlers.remove(thing.getHandler());
         }
         super.unregisterHandler(thing);
     }

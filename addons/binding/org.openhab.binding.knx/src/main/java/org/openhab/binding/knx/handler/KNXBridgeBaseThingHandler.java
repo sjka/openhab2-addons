@@ -16,6 +16,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
@@ -90,7 +91,7 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
     private Set<IndividualAddressListener> individualAddressListeners = new ConcurrentHashMap<IndividualAddressListener, Boolean>()
             .keySet(Boolean.TRUE);
     private Set<KNXBusListener> knxBusListeners = new ConcurrentHashMap<KNXBusListener, Boolean>().keySet(Boolean.TRUE);
-    private final Collection<KNXTypeMapper> typeMappers;
+    private final Collection<KNXTypeMapper> typeMappers = new CopyOnWriteArraySet<>();
     private final KNXHandlerFactory factory;
 
     private LinkedBlockingQueue<RetryDatapoint> readDatapoints = new LinkedBlockingQueue<RetryDatapoint>();
@@ -119,9 +120,8 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
 
     private BridgeConfiguration config;
 
-    public KNXBridgeBaseThingHandler(Bridge bridge, Collection<KNXTypeMapper> typeMappers, KNXHandlerFactory factory) {
+    public KNXBridgeBaseThingHandler(Bridge bridge, KNXHandlerFactory factory) {
         super(bridge);
-        this.typeMappers = typeMappers;
         this.factory = factory;
     }
 
