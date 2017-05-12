@@ -142,6 +142,11 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
         R apply(T t) throws KNXException, InterruptedException;
     }
 
+    @FunctionalInterface
+    private interface ListenerNotification {
+        void apply(TelegramListener listener, IndividualAddress source, GroupAddress destination, byte[] asdu);
+    }
+
     public KNXBridgeBaseThingHandler(Bridge bridge) {
         super(bridge);
     }
@@ -396,11 +401,6 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
                 }
             }
         }
-    }
-
-    @FunctionalInterface
-    private interface ListenerNotification {
-        void apply(TelegramListener listener, IndividualAddress source, GroupAddress destination, byte[] asdu);
     }
 
     /**
