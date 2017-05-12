@@ -496,13 +496,6 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
             logger.trace("Received a Group Write telegram from '{}' for destination '{}'", e.getSourceAddr(),
                     destination);
 
-            for (IndividualAddressListener listener : individualAddressListeners) {
-                if (listener.listensTo(source)) {
-                    knxScheduler.schedule(new OnGroupWriteRunnable(listener, this, source, destination, asdu), 0,
-                            TimeUnit.SECONDS);
-                }
-            }
-
             for (GroupAddressListener listener : groupAddressListeners) {
                 if (listener.listensTo(destination)) {
                     knxScheduler.schedule(new OnGroupWriteRunnable(listener, this, source, destination, asdu), 0,
@@ -535,17 +528,6 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
                     destination);
 
             byte[] asdu = e.getASDU();
-
-            for (IndividualAddressListener listener : individualAddressListeners) {
-                if (listener.listensTo(source)) {
-                    if (listener instanceof GroupAddressListener
-                            && ((GroupAddressListener) listener).listensTo(destination)) {
-                        listener.onGroupRead(this, source, destination, asdu);
-                    } else {
-                        listener.onGroupRead(this, source, destination, asdu);
-                    }
-                }
-            }
 
             for (GroupAddressListener listener : groupAddressListeners) {
                 if (listener.listensTo(destination)) {
@@ -586,17 +568,6 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
 
             logger.trace("Received a Group Read Response telegram from '{}' for destination '{}'", e.getSourceAddr(),
                     destination);
-
-            for (IndividualAddressListener listener : individualAddressListeners) {
-                if (listener.listensTo(source)) {
-                    if (listener instanceof GroupAddressListener
-                            && ((GroupAddressListener) listener).listensTo(destination)) {
-                        listener.onGroupReadResponse(this, source, destination, asdu);
-                    } else {
-                        listener.onGroupReadResponse(this, source, destination, asdu);
-                    }
-                }
-            }
 
             for (GroupAddressListener listener : groupAddressListeners) {
                 if (listener.listensTo(destination)) {
