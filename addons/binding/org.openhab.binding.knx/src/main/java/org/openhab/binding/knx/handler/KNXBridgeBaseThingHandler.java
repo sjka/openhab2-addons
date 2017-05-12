@@ -9,13 +9,10 @@
 package org.openhab.binding.knx.handler;
 
 import java.nio.ByteBuffer;
-import java.text.SimpleDateFormat;
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
-import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -793,61 +790,6 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
         EventSource source;
         ChannelUID channel;
         Type type;
-    }
-
-    LinkedBlockingDeque<LoggedEvent> loggedEvents = new LinkedBlockingDeque<LoggedEvent>(100);
-
-    SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss,SSS");
-
-    public void logEvent(ChannelUID channelUID, Type type) {
-        logEvent(EventSource.EMPTY, channelUID, type);
-    }
-
-    public void logEvent(EventSource source, ChannelUID channelUID, Type type) {
-        LoggedEvent newEvent = new LoggedEvent();
-        newEvent.timeStamp = System.currentTimeMillis();
-        newEvent.source = source;
-        newEvent.channel = channelUID;
-        newEvent.type = type;
-        synchronized (loggedEvents) {
-            if (loggedEvents.remainingCapacity() == 0) {
-                loggedEvents.removeLast();
-            }
-            loggedEvents.addFirst(newEvent);
-        }
-
-    }
-
-    public boolean hasEvent(ChannelUID channelUID, Type command, EventSource source, long to) {
-        return hasEvent(channelUID, command, source, 0, to);
-    }
-
-    public boolean hasEvent(ChannelUID channelUID, Type command, long to) {
-        return hasEvent(channelUID, command, EventSource.EMPTY, 0, to);
-    }
-
-    public boolean hasEvent(ChannelUID channelUID, Type command, long from, long to) {
-        return hasEvent(channelUID, command, EventSource.EMPTY, from, to);
-    }
-
-    public boolean hasEvent(ChannelUID channelUID, Type command, EventSource source, long from, long to) {
-        synchronized (loggedEvents) {
-
-            Iterator<LoggedEvent> iterator = loggedEvents.iterator();
-            while (iterator.hasNext()) {
-                LoggedEvent event = iterator.next();
-                long now = System.currentTimeMillis();
-                if ((now - event.timeStamp >= from) && (now - event.timeStamp <= to)) {
-                    if (event.channel == channelUID) {
-                        return true;
-                    }
-                }
-                if (now - event.timeStamp > to) {
-                    break;
-                }
-            }
-        }
-        return false;
     }
 
     public ScheduledExecutorService getScheduler() {
