@@ -272,7 +272,7 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
         try {
             closeConnection();
 
-            logger.trace("Connecting to the KNX bus");
+            logger.debug("Bridge {} is connecting to the KNX bus", getThing().getUID());
             link = establishConnection();
 
             if (link != null) {
@@ -312,6 +312,7 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
     }
 
     private void closeConnection() {
+        logger.debug("Bridge {} is disconnecting from the KNX bus", getThing().getUID());
         if (busJob != null) {
             busJob.cancel(true);
             busJob = null;
