@@ -250,28 +250,9 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
 
     private void connect() {
         try {
+            closeConnection();
 
             logger.trace("Connecting to the KNX bus");
-
-            if (mp != null) {
-                mp.detach();
-            }
-
-            if (mc != null) {
-                mc.detach();
-            }
-
-            if (pc != null) {
-                if (pl != null) {
-                    pc.removeProcessListener(pl);
-                }
-                pc.detach();
-            }
-
-            if (link != null && link.isOpen()) {
-                link.close();
-            }
-
             link = establishConnection();
 
             pl = new ProcessListenerEx() {
@@ -349,13 +330,34 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
         }
     }
 
-    private void disconnect() {
+    private void closeConnection() {
+        if (mp != null) {
+            mp.detach();
+            mp = null;
+        }
+        if (mc != null) {
+            mc.detach();
+            mc = null;
+        }
+        if (pc != null) {
+            if (pl != null) {
+                pc.removeProcessListener(pl);
+                pl = null;
+            }
+            pc.detach();
+            pc = null;
+        }
+        if (link != null) {
+            link.close();
+            link = null;
+        }
+    }
 
+    private void disconnect() {
         if (busJob != null) {
             busJob.cancel(true);
             busJob = null;
         }
-
         if (readFutures != null) {
             for (ScheduledFuture<?> readJob : readFutures) {
                 if (!readJob.isDone()) {
@@ -363,27 +365,7 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
                 }
             }
         }
-
-        if (pc != null) {
-            if (pl != null) {
-                pc.removeProcessListener(pl);
-            }
-            pc.detach();
-        }
-
-        if (mp != null) {
-            mp.detach();
-        }
-
-        if (mc != null) {
-            mc.detach();
-        }
-
-        if (link != null) {
-            link.removeLinkListener(this);
-            link.close();
-        }
-
+        closeConnection();
         updateStatus(ThingStatus.OFFLINE);
     }
 
