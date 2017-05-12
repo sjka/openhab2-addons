@@ -17,31 +17,31 @@
             <parameter name="readingPause" type="integer">
                 <label>Reading Pause</label>
                 <description>Time in milliseconds of how long should be paused between two read requests to the bus during initialization</description>
-                <required>false</required>
+                <required>true</required>
                 <default>50</default>
             </parameter>
             <parameter name="responseTimeout" type="integer">
             	<label>Response Timeout</label>
             	<description>Seconds to wait for a response from the KNX bus</description>
-            	<required>false</required>
+            	<required>true</required>
             	<default>10</default>
         	</parameter>  
         	<parameter name="readRetriesLimit" type="integer">
             	<label>Read Retries Limit</label>
             	<description>Limits the read retries while initialization from the KNX bus</description>
-            	<required>false</required>
+            	<required>true</required>
             	<default>3</default>
         	</parameter>
         	<parameter name="autoReconnectPeriod" type="integer">
             	<label>Auto Reconnect Period</label>
             	<description>Seconds between connect retries when KNX link has been lost, 0 means never retry</description>
-            	<required>false</required>
+            	<required>true</required>
             	<default>0</default>
         	</parameter>
         	<parameter name="enableDiscovery" type="boolean">
                 <label>Enable Discovery</label>
                 <description>Enable or disable automatic Individual Address discovery</description>
-                <required>false</required>
+                <required>true</required>
                 <default>true</default>
             </parameter>
             <parameter name="knxProj" type="text">

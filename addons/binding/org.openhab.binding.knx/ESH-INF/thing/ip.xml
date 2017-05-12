@@ -19,27 +19,34 @@
                 <label>IP Connection Type</label>
                 <description>The ip connection type for connecting to the KNX bus. Could be either TUNNEL or ROUTER</description>
                 <required>true</required>
+                <options>
+                    <option value="TUNNEL">Tunnel</option>
+                    <option value="ROUTER">Router</option>
+                </options>
             </parameter>  
             <parameter name="ipAddress" type="text">
                 <label>Network Address</label>
                 <description>Network address of the KNX/IP gateway</description>
-                <required>false</required> <!-- Not required if ipConnectionType is ROUTER -->
+                <required>false</required>
+                <context>network-address</context>
             </parameter>
             <parameter name="portNumber" type="integer">
-                <label>Port Number</label>
                 <description>Port number of the KNX/IP gateway</description>
-                <required>false</required> <!-- Not required if ipConnectionType is ROUTER -->
+                <required>false</required> <!-- Only required in TUNNEL mode -->
+                <label>Port</label>
                 <default>3671</default>
             </parameter>
             <parameter name="localIp" type="text">
                 <label>Local Network Address</label>
                 <description>Network address of the local host to be used to set up the connection to the KNX/IP gateway</description>
+                <context>network-address</context>
                 <required>false</required>
             </parameter>      
-             <parameter name="localSourceAddr" type="text">
-                <label>local KNX GA</label>
-                <description>The group address for identification of this KNX/IP gateway within the KNX bus. Default is 0.0.0</description>
-                <required>false</required>
+            <parameter name="localSourceAddr" type="text">
+                <label>Local KNX GA</label>
+                <description>The group address for identification of this KNX/IP gateway within the KNX bus</description>
+                <required>true</required>
+                <default>0.0.0</default>
             </parameter>
             <parameter name="useNAT" type="boolean">
                 <label>Use NAT</label>
@@ -50,36 +57,36 @@
             <parameter name="readingPause" type="integer">
                 <label>Reading Pause</label>
                 <description>Time in milliseconds of how long should be paused between two read requests to the bus during initialization</description>
-                <required>false</required>
+                <required>true</required>
                 <default>50</default>
             </parameter>
             <parameter name="responseTimeout" type="integer">
             	<label>Response Timeout</label>
             	<description>Seconds to wait for a response from the KNX bus</description>
-            	<required>false</required>
+            	<required>true</required>
             	<default>10</default>
         	</parameter>  
         	<parameter name="readRetriesLimit" type="integer">
             	<label>Read Retries Limit</label>
             	<description>Limits the read retries while initialization from the KNX bus</description>
-            	<required>false</required>
+            	<required>true</required>
             	<default>3</default>
         	</parameter>
         	<parameter name="autoReconnectPeriod" type="integer">
             	<label>Auto Reconnect Period</label>
-            	<description>Seconds between connect retries when KNX link has been lost, 0 means never retry</description>
-            	<required>false</required>
+            	<description>Seconds between connection retries when KNX link has been lost, 0 means never retry</description>
+            	<required>true</required>
             	<default>0</default>
         	</parameter>
         	<parameter name="enableDiscovery" type="boolean">
                 <label>Enable Discovery</label>
                 <description>Enable or disable automatic Individual Address discovery</description>
-                <required>false</required>
+                <required>true</required>
                 <default>true</default>
             </parameter>
             <parameter name="knxProj" type="text">
                 <label>KNX Project File</label>
-                <description>KNX Project File (knxproj) to parse and add to the Things managed by this Bridge</description>
+                <description>KNX Project File (knxproj) to parse automatically add to the system</description>
                 <required>false</required>
             </parameter> 
         </config-description>
