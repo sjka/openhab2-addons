@@ -129,11 +129,9 @@ public class KNXHandlerFactory extends BaseThingHandlerFactory {
     protected ThingHandler createHandler(Thing thing) {
         if (thing.getThingTypeUID().equals(THING_TYPE_IP_BRIDGE)) {
             IPBridgeThingHandler handler = new IPBridgeThingHandler((Bridge) thing, typeMappers, this);
-            registerIndividualAddressDiscoveryService(handler);
             return handler;
         } else if (thing.getThingTypeUID().equals(THING_TYPE_SERIAL_BRIDGE)) {
             SerialBridgeThingHandler handler = new SerialBridgeThingHandler((Bridge) thing, typeMappers, this);
-            registerIndividualAddressDiscoveryService(handler);
             return handler;
         } else if (thing.getThingTypeUID().equals(THING_TYPE_GENERIC)) {
             return new KNXGenericThingHandler(thing, itemChannelLinkRegistry);
@@ -171,10 +169,18 @@ public class KNXHandlerFactory extends BaseThingHandlerFactory {
         return thingUID;
     }
 
-    private synchronized void registerIndividualAddressDiscoveryService(KNXBridgeBaseThingHandler bridgeHandler) {
-        IndividualAddressDiscoveryService discoveryService = new IndividualAddressDiscoveryService(bridgeHandler);
-        this.discoveryServiceRegs.put(bridgeHandler.getThing().getUID(), bundleContext
-                .registerService(DiscoveryService.class.getName(), discoveryService, new Hashtable<String, Object>()));
+    private synchronized void registerAddressDiscoveryService(KNXBridgeBaseThingHandler bridgeHandler) {
+        IndividualAddressDiscoveryService service = new IndividualAddressDiscoveryService(bridgeHandler);
+        Hashtable<String, Object> properties = new Hashtable<String, Object>();
+        ServiceRegistration reg = bundleContext.registerService(DiscoveryService.class.getName(), service, properties);
+        this.discoveryServiceRegs.put(bridgeHandler.getThing().getUID(), reg);
+    }
+
+    private synchronized void unregisterAddressDiscoveryService(Thing thing) {
+        ServiceRegistration reg = discoveryServiceRegs.remove(thing.getUID());
+        if (reg != null) {
+            reg.unregister();
+        }
     }
 
     private synchronized void registerProjectProviderService(KNXBridgeBaseThingHandler bridgeHandler) {
@@ -199,7 +205,9 @@ public class KNXHandlerFactory extends BaseThingHandlerFactory {
     public ThingHandler registerHandler(Thing thing) {
         ThingHandler handler = super.registerHandler(thing);
         if (handler instanceof KNXBridgeBaseThingHandler) {
-            registerProjectProviderService((KNXBridgeBaseThingHandler) thing.getHandler());
+            KNXBridgeBaseThingHandler bridgeHandler = (KNXBridgeBaseThingHandler) thing.getHandler();
+            registerProjectProviderService(bridgeHandler);
+            registerAddressDiscoveryService(bridgeHandler);
         }
         return handler;
     }
@@ -208,6 +216,7 @@ public class KNXHandlerFactory extends BaseThingHandlerFactory {
     public void unregisterHandler(Thing thing) {
         if (thing.getHandler() instanceof KNXBridgeBaseThingHandler) {
             unregisterProjectProviderService(thing);
+            unregisterAddressDiscoveryService(thing);
         }
         super.unregisterHandler(thing);
     }
