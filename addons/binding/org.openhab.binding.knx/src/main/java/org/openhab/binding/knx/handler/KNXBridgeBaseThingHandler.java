@@ -96,9 +96,9 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
     protected ConcurrentHashMap<IndividualAddress, Destination> destinations = new ConcurrentHashMap<IndividualAddress, Destination>();
 
     // Data structures related to the KNX protocol stack
-    private ProcessCommunicator pc = null;
-    private ManagementProcedures mp;
-    private ManagementClient mc;
+    private ProcessCommunicator processCommunicator = null;
+    private ManagementProcedures managementProcedures;
+    private ManagementClient managementClient;
     private KNXNetworkLink link;
     private final LogAdapter logAdapter = new LogAdapter();
 
@@ -278,14 +278,14 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
             link = establishConnection();
 
             if (link != null) {
-                mp = new ManagementProceduresImpl(link);
+                managementProcedures = new ManagementProceduresImpl(link);
 
-                mc = new ManagementClientImpl(link);
-                mc.setResponseTimeout(config.getResponseTimeOut().intValue() / 1000);
+                managementClient = new ManagementClientImpl(link);
+                managementClient.setResponseTimeout(config.getResponseTimeOut().intValue() / 1000);
 
-                pc = new ProcessCommunicatorImpl(link);
-                pc.setResponseTimeout(config.getResponseTimeOut().intValue() / 1000);
-                pc.addProcessListener(processListener);
+                processCommunicator = new ProcessCommunicatorImpl(link);
+                processCommunicator.setResponseTimeout(config.getResponseTimeOut().intValue() / 1000);
+                processCommunicator.addProcessListener(processListener);
 
                 link.addLinkListener(this);
             }
@@ -330,18 +330,18 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
     }
 
     private void closeConnection() {
-        if (mp != null) {
-            mp.detach();
-            mp = null;
+        if (managementProcedures != null) {
+            managementProcedures.detach();
+            managementProcedures = null;
         }
-        if (mc != null) {
-            mc.detach();
-            mc = null;
+        if (managementClient != null) {
+            managementClient.detach();
+            managementClient = null;
         }
-        if (pc != null) {
-            pc.removeProcessListener(processListener);
-            pc.detach();
-            pc = null;
+        if (processCommunicator != null) {
+            processCommunicator.removeProcessListener(processListener);
+            processCommunicator.detach();
+            processCommunicator = null;
         }
         if (link != null) {
             link.close();
@@ -392,7 +392,7 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
                     try {
                         logger.trace("Sending a Group Read Request telegram for destination '{}'",
                                 datapoint.getDatapoint().getMainAddress());
-                        pc.read(datapoint.getDatapoint());
+                        processCommunicator.read(datapoint.getDatapoint());
                         success = true;
                     } catch (KNXException e) {
                         logger.warn("Cannot read value for datapoint '{}' from KNX bus: {}",
@@ -580,7 +580,7 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
                 try {
                     String mappedValue = toDPTValue(value, datapoint.getDPT());
                     if (mappedValue != null) {
-                        pc.write(datapoint, mappedValue);
+                        processCommunicator.write(datapoint, mappedValue);
                         logger.debug("Wrote value '{}' to datapoint '{}'", value, datapoint);
                     } else {
                         logger.debug("Value '{}' can not be mapped to datapoint '{}'", value, datapoint);
@@ -592,7 +592,7 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
                     try {
                         // do a second try, maybe the reconnection was successful
                         // pc = getCommunicator();
-                        pc.write(datapoint, toDPTValue(value, datapoint.getDPT()));
+                        processCommunicator.write(datapoint, toDPTValue(value, datapoint.getDPT()));
                         logger.debug("Wrote value '{}' to datapoint '{}' on second try", value, datapoint);
                     } catch (KNXException e1) {
                         logger.error(
@@ -602,7 +602,8 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
                     }
                 }
             } else {
-                logger.error("Can not write to the KNX bus (pc {}, link {})", pc == null ? "Not OK" : "OK",
+                logger.error("Can not write to the KNX bus (pc {}, link {})",
+                        processCommunicator == null ? "Not OK" : "OK",
                         link == null ? "Not OK" : (link.isOpen() ? "Open" : "Closed"));
             }
 
@@ -662,9 +663,9 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
     }
 
     synchronized public boolean isReachable(IndividualAddress address) {
-        if (mp != null) {
+        if (managementProcedures != null) {
             try {
-                return mp.isAddressOccupied(address);
+                return managementProcedures.isAddressOccupied(address);
             } catch (KNXException | InterruptedException e) {
                 logger.error("An exception occurred while trying to reach address '{}' : {}", address.toString(),
                         e.getMessage(), e);
@@ -676,9 +677,9 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
 
     synchronized public void restartNetworkDevice(IndividualAddress address) {
         if (address != null) {
-            Destination destination = mc.createDestination(address, true);
+            Destination destination = managementClient.createDestination(address, true);
             try {
-                mc.restart(destination);
+                managementClient.restart(destination);
             } catch (KNXTimeoutException | KNXLinkClosedException e) {
                 logger.error("An exception occurred while resetting the device with address {} : {}", address,
                         e.getMessage(), e);
@@ -688,7 +689,7 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
 
     synchronized public IndividualAddress[] scanNetworkDevices(final int area, final int line) {
         try {
-            return mp.scanNetworkDevices(area, line);
+            return managementProcedures.scanNetworkDevices(area, line);
         } catch (final Exception e) {
             logger.error("An exception occurred while scanning the KNX bus : '{}'", e.getMessage(), e);
         }
@@ -698,7 +699,7 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
 
     synchronized public IndividualAddress[] scanNetworkRouters() {
         try {
-            return mp.scanNetworkRouters();
+            return managementProcedures.scanNetworkRouters();
         } catch (final Exception e) {
             logger.error("An exception occurred while scanning the KNX bus : '{}'", e.getMessage(), e);
         }
@@ -719,14 +720,14 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
 
                 logger.debug("Reading Device Description of {} ", address);
 
-                destination = mc.createDestination(address, true);
+                destination = managementClient.createDestination(address, true);
 
                 if (authenticate) {
-                    mc.authorize(destination, (ByteBuffer.allocate(4)).put((byte) 0xFF).put((byte) 0xFF)
+                    managementClient.authorize(destination, (ByteBuffer.allocate(4)).put((byte) 0xFF).put((byte) 0xFF)
                             .put((byte) 0xFF).put((byte) 0xFF).array());
                 }
 
-                result = mc.readDeviceDesc(destination, descType);
+                result = managementClient.readDeviceDesc(destination, descType);
                 logger.debug("Reading Device Description of {} yields {} bytes", address,
                         result == null ? null : result.length);
 
@@ -758,14 +759,14 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
                 logger.debug("Reading {} bytes at memory location {} of device {}",
                         new Object[] { bytes, startAddress, address });
 
-                destination = mc.createDestination(address, true);
+                destination = managementClient.createDestination(address, true);
 
                 if (authenticate) {
-                    mc.authorize(destination, (ByteBuffer.allocate(4)).put((byte) 0xFF).put((byte) 0xFF)
+                    managementClient.authorize(destination, (ByteBuffer.allocate(4)).put((byte) 0xFF).put((byte) 0xFF)
                             .put((byte) 0xFF).put((byte) 0xFF).array());
                 }
 
-                result = mc.readMemory(destination, startAddress, bytes);
+                result = managementClient.readMemory(destination, startAddress, bytes);
                 logger.debug("Reading {} bytes at memory location {} of device {} yields {} bytes",
                         new Object[] { bytes, startAddress, address, result == null ? null : result.length });
 
@@ -812,14 +813,14 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
                 logger.debug("Reading device property {} at index {} for {}", new Object[] { propertyId,
                         interfaceObjectIndex, address, result == null ? null : result.length });
 
-                destination = mc.createDestination(address, true);
+                destination = managementClient.createDestination(address, true);
 
                 if (authenticate) {
-                    mc.authorize(destination, (ByteBuffer.allocate(4)).put((byte) 0xFF).put((byte) 0xFF)
+                    managementClient.authorize(destination, (ByteBuffer.allocate(4)).put((byte) 0xFF).put((byte) 0xFF)
                             .put((byte) 0xFF).put((byte) 0xFF).array());
                 }
 
-                result = mc.readProperty(destination, interfaceObjectIndex, propertyId, start, elements);
+                result = managementClient.readProperty(destination, interfaceObjectIndex, propertyId, start, elements);
 
                 logger.debug("Reading device property {} at index {} for {} yields {} bytes", new Object[] { propertyId,
                         interfaceObjectIndex, address, result == null ? null : result.length });
