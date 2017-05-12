@@ -33,7 +33,6 @@ import org.openhab.binding.knx.GroupAddressListener;
 import org.openhab.binding.knx.IndividualAddressListener;
 import org.openhab.binding.knx.KNXBindingConstants;
 import org.openhab.binding.knx.KNXBusListener;
-import org.openhab.binding.knx.TelegramListener;
 import org.openhab.binding.knx.internal.dpt.KNXCoreTypeMapper;
 import org.openhab.binding.knx.internal.dpt.KNXTypeMapper;
 import org.openhab.binding.knx.internal.factory.KNXThreadPoolFactory;
@@ -413,29 +412,6 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
         }
     }
 
-    private class OnGroupWriteRunnable implements Runnable {
-
-        TelegramListener listener;
-        KNXBridgeBaseThingHandler bridge;
-        IndividualAddress source;
-        GroupAddress destination;
-        byte[] asdu;
-
-        public OnGroupWriteRunnable(TelegramListener listener, KNXBridgeBaseThingHandler bridge,
-                IndividualAddress source, GroupAddress destination, byte[] asdu) {
-            this.listener = listener;
-            this.bridge = bridge;
-            this.source = source;
-            this.destination = destination;
-            this.asdu = asdu;
-        }
-
-        @Override
-        public void run() {
-            listener.onGroupWrite(bridge, source, destination, asdu);
-        }
-    }
-
     /**
      * Handles the given {@link ProcessEvent}. If the KNX ASDU is valid
      * it is passed on to the {@link IndividualAddressListener}s and {@link GroupAddressListener}s that are interested
@@ -458,7 +434,7 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
 
             for (GroupAddressListener listener : groupAddressListeners) {
                 if (listener.listensTo(destination)) {
-                    knxScheduler.schedule(new OnGroupWriteRunnable(listener, this, source, destination, asdu), 0,
+                    knxScheduler.schedule(() -> listener.onGroupWrite(this, source, destination, asdu), 0,
                             TimeUnit.SECONDS);
                 }
             }
