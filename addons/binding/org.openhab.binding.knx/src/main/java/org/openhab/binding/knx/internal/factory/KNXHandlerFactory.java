@@ -128,17 +128,13 @@ public class KNXHandlerFactory extends BaseThingHandlerFactory {
     @Override
     protected ThingHandler createHandler(Thing thing) {
         if (thing.getThingTypeUID().equals(THING_TYPE_IP_BRIDGE)) {
-            IPBridgeThingHandler handler = new IPBridgeThingHandler((Bridge) thing);
-            return handler;
+            return new IPBridgeThingHandler((Bridge) thing);
         } else if (thing.getThingTypeUID().equals(THING_TYPE_SERIAL_BRIDGE)) {
-            SerialBridgeThingHandler handler = new SerialBridgeThingHandler((Bridge) thing);
-            return handler;
+            return new SerialBridgeThingHandler((Bridge) thing);
         } else if (thing.getThingTypeUID().equals(THING_TYPE_GENERIC)) {
             return new KNXGenericThingHandler(thing, itemChannelLinkRegistry);
         }
-
         return null;
-
     }
 
     private ThingUID getIPBridgeThingUID(ThingTypeUID thingTypeUID, ThingUID thingUID, Configuration configuration) {
