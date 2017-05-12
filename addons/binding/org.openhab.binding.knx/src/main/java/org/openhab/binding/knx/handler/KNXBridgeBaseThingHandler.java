@@ -32,7 +32,7 @@ import org.openhab.binding.knx.GroupAddressListener;
 import org.openhab.binding.knx.IndividualAddressListener;
 import org.openhab.binding.knx.KNXBindingConstants;
 import org.openhab.binding.knx.KNXBusListener;
-import org.openhab.binding.knx.internal.dpt.KNXCoreTypeMapper;
+import org.openhab.binding.knx.TelegramListener;
 import org.openhab.binding.knx.internal.dpt.KNXTypeMapper;
 import org.openhab.binding.knx.internal.factory.KNXThreadPoolFactory;
 import org.openhab.binding.knx.internal.handler.BridgeConfiguration;
@@ -50,8 +50,6 @@ import tuwien.auto.calimero.cemi.CEMILData;
 import tuwien.auto.calimero.datapoint.CommandDP;
 import tuwien.auto.calimero.datapoint.Datapoint;
 import tuwien.auto.calimero.exception.KNXException;
-import tuwien.auto.calimero.exception.KNXTimeoutException;
-import tuwien.auto.calimero.link.KNXLinkClosedException;
 import tuwien.auto.calimero.link.KNXNetworkLink;
 import tuwien.auto.calimero.link.NetworkLinkListener;
 import tuwien.auto.calimero.log.LogManager;
@@ -118,17 +116,23 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
 
         @Override
         public void groupWrite(ProcessEvent e) {
-            onGroupWriteEvent(e);
+            processEvent("Group Write Request", e, (listener, source, destination, asdu) -> {
+                listener.onGroupWrite(KNXBridgeBaseThingHandler.this, source, destination, asdu);
+            });
         }
 
         @Override
         public void groupReadRequest(ProcessEvent e) {
-            onGroupReadEvent(e);
+            processEvent("Group Read Request", e, (listener, source, destination, asdu) -> {
+                listener.onGroupRead(KNXBridgeBaseThingHandler.this, source, destination, asdu);
+            });
         }
 
         @Override
         public void groupReadResponse(ProcessEvent e) {
-            onGroupReadResponseEvent(e);
+            processEvent("Group Read Response", e, (listener, source, destination, asdu) -> {
+                listener.onGroupReadResponse(KNXBridgeBaseThingHandler.this, source, destination, asdu);
+            });
         }
     };
 
@@ -389,106 +393,46 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
         }
     }
 
-    /**
-     * Handles the given {@link ProcessEvent}. If the KNX ASDU is valid
-     * it is passed on to the {@link IndividualAddressListener}s and {@link GroupAddressListener}s that are interested
-     * in the telegram, and subsequently to the
-     * {@link KNXBusListener}s that are interested in all KNX bus activity
-     *
-     * @param e the {@link ProcessEvent} to handle.
-     */
-    private void onGroupWriteEvent(ProcessEvent e) {
-        try {
-            GroupAddress destination = e.getDestination();
-            IndividualAddress source = e.getSourceAddr();
-            byte[] asdu = e.getASDU();
-            if (asdu.length == 0) {
-                return;
-            }
-
-            logger.trace("Received a Group Write telegram from '{}' for destination '{}'", e.getSourceAddr(),
-                    destination);
-
-            for (GroupAddressListener listener : groupAddressListeners) {
-                if (listener.listensTo(destination)) {
-                    knxScheduler.schedule(() -> listener.onGroupWrite(this, source, destination, asdu), 0,
-                            TimeUnit.SECONDS);
-                }
-            }
-
-            for (KNXBusListener listener : knxBusListeners) {
-                listener.onActivity(e.getSourceAddr(), destination, asdu);
-            }
-        } catch (RuntimeException re) {
-            logger.error("An exception occurred while receiving event from the KNX bus : '{}'", re.getMessage(), re);
-        }
+    @FunctionalInterface
+    private interface ListenerNotification {
+        void apply(TelegramListener listener, IndividualAddress source, GroupAddress destination, byte[] asdu);
     }
 
     /**
-     * Handles the given {@link ProcessEvent}. If the KNX ASDU is valid
-     * it is passed on to the {@link IndividualAddressListener}s and {@link GroupAddressListener}s that are interested
-     * in the telegram, and subsequently to the
-     * {@link KNXBusListener}s that are interested in all KNX bus activity
+     * Handles the given {@link ProcessEvent}.
+     *
+     * If the KNX ASDU is valid it is passed on to the {@link GroupAddressListener}s that are interested in the
+     * telegram, and subsequently to the {@link KNXBusListener}s that are interested in all KNX bus activity
      *
      * @param e the {@link ProcessEvent} to handle.
      */
-    private void onGroupReadEvent(ProcessEvent e) {
+    private void processEvent(String task, ProcessEvent event, ListenerNotification action) {
         try {
-            GroupAddress destination = e.getDestination();
-            IndividualAddress source = e.getSourceAddr();
-
-            logger.trace("Received a Group Read telegram from '{}' for destination '{}'", e.getSourceAddr(),
-                    destination);
-
-            byte[] asdu = e.getASDU();
-
-            for (GroupAddressListener listener : groupAddressListeners) {
-                if (listener.listensTo(destination)) {
-                    listener.onGroupRead(this, source, destination, asdu);
-                }
-            }
-
-            for (KNXBusListener listener : knxBusListeners) {
-                listener.onActivity(e.getSourceAddr(), destination, asdu);
-            }
-
-        } catch (RuntimeException re) {
-            logger.error("An exception occurred while receiving event from the KNX bus : '{}'", re.getMessage(), re);
-        }
-    }
-
-    /**
-     * Handles the given {@link ProcessEvent}. If the KNX ASDU is valid
-     * it is passed on to the {@link IndividualAddressListener}s and {@link GroupAddressListener}s that are interested
-     * in the telegram, and subsequently to the
-     * {@link KNXBusListener}s that are interested in all KNX bus activity
-     *
-     * @param e the {@link ProcessEvent} to handle.
-     */
-    private void onGroupReadResponseEvent(ProcessEvent e) {
-        try {
-            GroupAddress destination = e.getDestination();
-            IndividualAddress source = e.getSourceAddr();
-            byte[] asdu = e.getASDU();
+            GroupAddress destination = event.getDestination();
+            IndividualAddress source = event.getSourceAddr();
+            byte[] asdu = event.getASDU();
             if (asdu.length == 0) {
                 return;
             }
-
-            logger.trace("Received a Group Read Response telegram from '{}' for destination '{}'", e.getSourceAddr(),
-                    destination);
-
-            for (GroupAddressListener listener : groupAddressListeners) {
-                if (listener.listensTo(destination)) {
-                    listener.onGroupReadResponse(this, source, destination, asdu);
+            logger.trace("Received a {} telegram from '{}' for destination '{}'", task, source, destination);
+            for (IndividualAddressListener listener : individualAddressListeners) {
+                if (listener.listensTo(source)) {
+                    knxScheduler.schedule(() -> action.apply(listener, source, destination, asdu), 0, TimeUnit.SECONDS);
                 }
             }
-
-            for (KNXBusListener listener : knxBusListeners) {
-                listener.onActivity(e.getSourceAddr(), destination, asdu);
+            for (GroupAddressListener listener : groupAddressListeners) {
+                if (listener.listensTo(destination)) {
+                    knxScheduler.schedule(() -> action.apply(listener, source, destination, asdu), 0, TimeUnit.SECONDS);
+                }
             }
-
-        } catch (RuntimeException re) {
-            logger.error("An exception occurred while receiving event from the KNX bus : '{}'", re.getMessage(), re);
+            for (KNXBusListener listener : knxBusListeners) {
+                listener.onActivity(source, destination, asdu);
+            }
+        } catch (RuntimeException e) {
+            logger.error("Error handling {} event from KNX bus: {}", task, e.getMessage());
+            if (logger.isDebugEnabled()) {
+                logger.error("", e);
+            }
         }
     }
 
