@@ -582,7 +582,7 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
      *            the byte array of the raw data from the KNX bus
      * @return the openHAB command or state that corresponds to the data
      */
-    public Type getType(Datapoint datapoint, byte[] asdu) {
+    private Type getType(Datapoint datapoint, byte[] asdu) {
         for (KNXTypeMapper typeMapper : typeMappers) {
             Type type = typeMapper.toType(datapoint, asdu);
             if (type != null) {
@@ -592,7 +592,7 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
         return null;
     }
 
-    public Type getType(GroupAddress destination, String dpt, byte[] asdu) {
+    public final Type getType(GroupAddress destination, String dpt, byte[] asdu) {
         Datapoint datapoint = new CommandDP(destination, getThing().getUID().toString(), 0, dpt);
         return getType(datapoint, asdu);
     }
