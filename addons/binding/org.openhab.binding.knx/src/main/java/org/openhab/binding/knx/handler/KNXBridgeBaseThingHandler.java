@@ -271,7 +271,7 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
      * Establish a communication channel to the KNX gateway.
      *
      */
-    protected abstract KNXNetworkLink establishConnection() throws KNXException;
+    protected abstract KNXNetworkLink establishConnection() throws KNXException, InterruptedException;
 
     private void connect() {
         try {
@@ -308,6 +308,8 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
             }
             closeConnection();
             updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR, e.getLocalizedMessage());
+        } catch (InterruptedException e) {
+            disconnect();
         }
 
         synchronized (connectLock) {
@@ -465,7 +467,7 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
                 } else {
                     logger.debug("Value '{}' could not be sent to the KNX bus using datapoint '{}': {}. Giving up now.",
                             value, datapoint, e.getMessage());
-                    disconnect();
+                    closeConnection();
                     updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR, e.getMessage());
                 }
             }
