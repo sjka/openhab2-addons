@@ -290,6 +290,7 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
 
             errorsSinceStart = 0;
             errorsSinceInterval = 0;
+            intervalTimestamp = 0;
 
             busJob = knxScheduler.scheduleWithFixedDelay(() -> readNextQueuedDatapoint(), 0,
                     config.getReadingPause().intValue(), TimeUnit.MILLISECONDS);
