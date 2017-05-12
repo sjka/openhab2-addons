@@ -611,16 +611,22 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
         return false;
     }
 
-    public synchronized void restartNetworkDevice(IndividualAddress address) {
-        if (address != null) {
-            Destination destination = managementClient.createDestination(address, true);
-            try {
-                managementClient.restart(destination);
-            } catch (KNXTimeoutException | KNXLinkClosedException e) {
-                logger.error("Could not reset the device with address '{}': {}", address, e.getMessage());
-                if (logger.isDebugEnabled()) {
-                    logger.error("", e);
-                }
+    public synchronized final void restartNetworkDevice(IndividualAddress address) {
+        if (address == null) {
+            return;
+        }
+        Destination destination = null;
+        try {
+            destination = managementClient.createDestination(address, true);
+            managementClient.restart(destination);
+        } catch (KNXException e) {
+            logger.error("Could not reset the device with address '{}': {}", address, e.getMessage());
+            if (logger.isDebugEnabled()) {
+                logger.error("", e);
+            }
+        } finally {
+            if (destination != null) {
+                destination.destroy();
             }
         }
     }
