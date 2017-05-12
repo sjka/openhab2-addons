@@ -36,6 +36,7 @@ import org.openhab.binding.knx.handler.KNXBridgeBaseThingHandler;
 import org.openhab.binding.knx.handler.KNXGenericThingHandler;
 import org.openhab.binding.knx.handler.SerialBridgeThingHandler;
 import org.openhab.binding.knx.internal.dpt.KNXTypeMapper;
+import org.openhab.binding.knx.internal.provider.KNXProjectThingProvider;
 import org.osgi.framework.ServiceRegistration;
 
 import com.google.common.collect.Lists;
@@ -46,14 +47,17 @@ import com.google.common.collect.Lists;
  *
  * @author Karel Goderis - Initial contribution
  */
+@SuppressWarnings("rawtypes")
 public class KNXHandlerFactory extends BaseThingHandlerFactory {
+
+    private static final String[] PROVIDER_INTERFACES = new String[] { KNXProjectProvider.class.getName(),
+            ThingProvider.class.getName() };
 
     public final static Collection<ThingTypeUID> SUPPORTED_THING_TYPES_UIDS = Lists.newArrayList(THING_TYPE_GENERIC,
             THING_TYPE_IP_BRIDGE, THING_TYPE_SERIAL_BRIDGE);
 
     private Map<ThingUID, ServiceRegistration<?>> discoveryServiceRegs = new HashMap<>();
     private Map<ThingUID, ServiceRegistration<?>> knxProjectProviderServiceRegs = new HashMap<>();
-    private Map<ThingUID, ServiceRegistration<?>> thingProviderServiceRegs = new HashMap<>();
     private ItemChannelLinkRegistry itemChannelLinkRegistry;
     private ThingTypeRegistry thingTypeRegistry;
     private LocaleProvider localeProvider;
@@ -126,12 +130,10 @@ public class KNXHandlerFactory extends BaseThingHandlerFactory {
         if (thing.getThingTypeUID().equals(THING_TYPE_IP_BRIDGE)) {
             IPBridgeThingHandler handler = new IPBridgeThingHandler((Bridge) thing, typeMappers, this);
             registerIndividualAddressDiscoveryService(handler);
-            registerProjectProviderService(handler);
             return handler;
         } else if (thing.getThingTypeUID().equals(THING_TYPE_SERIAL_BRIDGE)) {
             SerialBridgeThingHandler handler = new SerialBridgeThingHandler((Bridge) thing, typeMappers, this);
             registerIndividualAddressDiscoveryService(handler);
-            registerProjectProviderService(handler);
             return handler;
         } else if (thing.getThingTypeUID().equals(THING_TYPE_GENERIC)) {
             return new KNXGenericThingHandler(thing, itemChannelLinkRegistry);
@@ -176,13 +178,38 @@ public class KNXHandlerFactory extends BaseThingHandlerFactory {
     }
 
     private synchronized void registerProjectProviderService(KNXBridgeBaseThingHandler bridgeHandler) {
-        this.knxProjectProviderServiceRegs.put(bridgeHandler.getThing().getUID(), bundleContext
-                .registerService(KNXProjectProvider.class.getName(), bridgeHandler, new Hashtable<String, Object>()));
-        this.thingProviderServiceRegs.put(bridgeHandler.getThing().getUID(), bundleContext
-                .registerService(ThingProvider.class.getName(), bridgeHandler, new Hashtable<String, Object>()));
+        KNXProjectThingProvider provider = new KNXProjectThingProvider(bridgeHandler.getThing());
+        Hashtable<String, Object> properties = new Hashtable<String, Object>();
+        ServiceRegistration reg = bundleContext.registerService(PROVIDER_INTERFACES, provider, properties);
+        this.knxProjectProviderServiceRegs.put(bridgeHandler.getThing().getUID(), reg);
+    }
+
+    private synchronized void unregisterProjectProviderService(Thing thing) {
+        ServiceRegistration reg = knxProjectProviderServiceRegs.remove(thing.getUID());
+        if (reg != null) {
+            reg.unregister();
+        }
     }
 
     public ThingType getThingType(ThingTypeUID thingTypeUID) {
         return thingTypeRegistry.getThingType(thingTypeUID, localeProvider.getLocale());
     }
+
+    @Override
+    public ThingHandler registerHandler(Thing thing) {
+        ThingHandler handler = super.registerHandler(thing);
+        if (handler instanceof KNXBridgeBaseThingHandler) {
+            registerProjectProviderService((KNXBridgeBaseThingHandler) thing.getHandler());
+        }
+        return handler;
+    }
+
+    @Override
+    public void unregisterHandler(Thing thing) {
+        if (thing.getHandler() instanceof KNXBridgeBaseThingHandler) {
+            unregisterProjectProviderService(thing);
+        }
+        super.unregisterHandler(thing);
+    }
+
 }
