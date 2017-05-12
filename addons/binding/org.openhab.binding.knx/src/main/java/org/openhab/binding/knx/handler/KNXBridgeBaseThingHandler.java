@@ -97,7 +97,6 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
 
     // Data structures related to the KNX protocol stack
     private ProcessCommunicator pc = null;
-    private ProcessListenerEx pl = null;
     private ManagementProcedures mp;
     private ManagementClient mc;
     private KNXNetworkLink link;
@@ -117,6 +116,29 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
     private long errorsSinceInterval;
 
     private BridgeConfiguration config;
+
+    private final ProcessListenerEx processListener = new ProcessListenerEx() {
+
+        @Override
+        public void detached(DetachEvent e) {
+            logger.error("The KNX network link was detached from the process communicator", e.getSource());
+        }
+
+        @Override
+        public void groupWrite(ProcessEvent e) {
+            onGroupWriteEvent(e);
+        }
+
+        @Override
+        public void groupReadRequest(ProcessEvent e) {
+            onGroupReadEvent(e);
+        }
+
+        @Override
+        public void groupReadResponse(ProcessEvent e) {
+            onGroupReadResponseEvent(e);
+        }
+    };
 
     public KNXBridgeBaseThingHandler(Bridge bridge) {
         super(bridge);
@@ -255,29 +277,6 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
             logger.trace("Connecting to the KNX bus");
             link = establishConnection();
 
-            pl = new ProcessListenerEx() {
-
-                @Override
-                public void detached(DetachEvent e) {
-                    logger.error("The KNX network link was detached from the process communicator", e.getSource());
-                }
-
-                @Override
-                public void groupWrite(ProcessEvent e) {
-                    onGroupWriteEvent(e);
-                }
-
-                @Override
-                public void groupReadRequest(ProcessEvent e) {
-                    onGroupReadEvent(e);
-                }
-
-                @Override
-                public void groupReadResponse(ProcessEvent e) {
-                    onGroupReadResponseEvent(e);
-                }
-            };
-
             if (link != null) {
                 mp = new ManagementProceduresImpl(link);
 
@@ -286,7 +285,7 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
 
                 pc = new ProcessCommunicatorImpl(link);
                 pc.setResponseTimeout(config.getResponseTimeOut().intValue() / 1000);
-                pc.addProcessListener(pl);
+                pc.addProcessListener(processListener);
 
                 link.addLinkListener(this);
             }
@@ -340,10 +339,7 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
             mc = null;
         }
         if (pc != null) {
-            if (pl != null) {
-                pc.removeProcessListener(pl);
-                pl = null;
-            }
+            pc.removeProcessListener(processListener);
             pc.detach();
             pc = null;
         }
