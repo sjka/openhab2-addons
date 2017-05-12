@@ -138,31 +138,33 @@ public class KNXHandlerFactory extends BaseThingHandlerFactory {
     }
 
     private ThingUID getIPBridgeThingUID(ThingTypeUID thingTypeUID, ThingUID thingUID, Configuration configuration) {
-        if (thingUID == null) {
-            String ipAddress = (String) configuration.get(IP_ADDRESS);
-            thingUID = new ThingUID(thingTypeUID, ipAddress);
+        if (thingUID != null) {
+            return thingUID;
         }
-        return thingUID;
+        String ipAddress = (String) configuration.get(IP_ADDRESS);
+        return new ThingUID(thingTypeUID, ipAddress);
     }
 
     private ThingUID getSerialBridgeThingUID(ThingTypeUID thingTypeUID, ThingUID thingUID,
             Configuration configuration) {
-        if (thingUID == null) {
-            String serialPort = (String) configuration.get(SERIAL_PORT);
-            thingUID = new ThingUID(thingTypeUID, serialPort);
+        if (thingUID != null) {
+            return thingUID;
         }
-        return thingUID;
+        String serialPort = (String) configuration.get(SERIAL_PORT);
+        return new ThingUID(thingTypeUID, serialPort);
     }
 
     private ThingUID getGenericThingUID(ThingTypeUID thingTypeUID, ThingUID thingUID, Configuration configuration,
             ThingUID bridgeUID) {
-
-        String address = ((String) configuration.get(ADDRESS));
-
-        if (thingUID == null && address != null) {
-            thingUID = new ThingUID(thingTypeUID, address.replace(".", "_"), bridgeUID.getId());
+        if (thingUID != null) {
+            return thingUID;
         }
-        return thingUID;
+        String address = ((String) configuration.get(ADDRESS));
+        if (address != null) {
+            return new ThingUID(thingTypeUID, address.replace(".", "_"), bridgeUID.getId());
+        } else {
+            return null;
+        }
     }
 
     private synchronized void registerAddressDiscoveryService(KNXBridgeBaseThingHandler bridgeHandler) {
