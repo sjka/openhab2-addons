@@ -10,10 +10,8 @@ package org.openhab.binding.knx.handler;
 
 import java.nio.ByteBuffer;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -105,7 +103,6 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
     // Data structures related to the various jobs
     private ScheduledFuture<?> connectJob;
     private ScheduledFuture<?> busJob;
-    private List<ScheduledFuture<?>> readFutures = new ArrayList<ScheduledFuture<?>>();
     private Boolean connectLock = false;
 
     private ScheduledExecutorService knxScheduler;
@@ -294,14 +291,6 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
                 busJob.cancel(true);
             }
 
-            if (readFutures != null) {
-                for (ScheduledFuture<?> readJob : readFutures) {
-                    readJob.cancel(true);
-                }
-            } else {
-                readFutures = new ArrayList<ScheduledFuture<?>>();
-            }
-
             readDatapoints = new LinkedBlockingQueue<RetryDatapoint>();
 
             errorsSinceStart = 0;
@@ -353,13 +342,6 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
         if (busJob != null) {
             busJob.cancel(true);
             busJob = null;
-        }
-        if (readFutures != null) {
-            for (ScheduledFuture<?> readJob : readFutures) {
-                if (!readJob.isDone()) {
-                    readJob.cancel(true);
-                }
-            }
         }
         closeConnection();
         updateStatus(ThingStatus.OFFLINE);
