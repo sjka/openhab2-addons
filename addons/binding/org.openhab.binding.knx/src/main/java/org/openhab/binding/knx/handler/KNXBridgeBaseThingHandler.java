@@ -9,6 +9,7 @@
 package org.openhab.binding.knx.handler;
 
 import java.nio.ByteBuffer;
+import java.text.MessageFormat;
 import java.util.Collection;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -131,6 +132,11 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
             onGroupReadResponseEvent(e);
         }
     };
+
+    @FunctionalInterface
+    private interface ReadFunction<T, R> {
+        R apply(T t) throws KNXException, InterruptedException;
+    }
 
     public KNXBridgeBaseThingHandler(Bridge bridge) {
         super(bridge);
@@ -656,127 +662,66 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
         return null;
     }
 
-    public synchronized byte[] readDeviceDescription(IndividualAddress address, int descType, boolean authenticate,
-            long timeout) {
-
-        Destination destination = null;
-        boolean success = false;
-        byte[] result = null;
-        long now = System.currentTimeMillis();
-
-        while (!success && (System.currentTimeMillis() - now) < timeout) {
-            try {
-
-                logger.debug("Reading Device Description of {} ", address);
-
-                destination = managementClient.createDestination(address, true);
-
-                if (authenticate) {
-                    managementClient.authorize(destination, (ByteBuffer.allocate(4)).put((byte) 0xFF).put((byte) 0xFF)
-                            .put((byte) 0xFF).put((byte) 0xFF).array());
-                }
-
-                result = managementClient.readDeviceDesc(destination, descType);
-                logger.debug("Reading device description of {} yields {} bytes", address,
-                        result == null ? null : result.length);
-
-                success = true;
-            } catch (Exception e) {
-                logger.error("Could not read the device description for address '{}': {}", address.toString(),
-                        e.getMessage());
-                if (logger.isDebugEnabled()) {
-                    logger.error("", e);
-                }
-            } finally {
-                if (destination != null) {
-                    destination.destroy();
-                }
-            }
-        }
-
-        return result;
-    }
-
-    public synchronized byte[] readDeviceMemory(IndividualAddress address, int startAddress, int bytes,
-            boolean authenticate, long timeout) {
-
-        boolean success = false;
-        byte[] result = null;
-        long now = System.currentTimeMillis();
-
-        while (!success && (System.currentTimeMillis() - now) < timeout) {
+    private byte[] readFromManagementClient(String task, long timeout, IndividualAddress address,
+            ReadFunction<Destination, byte[]> function) {
+        final long start = System.nanoTime();
+        while ((System.nanoTime() - start) < TimeUnit.MILLISECONDS.toNanos(timeout)) {
             Destination destination = null;
             try {
-
-                logger.debug("Reading {} bytes at memory location {} of device {}",
-                        new Object[] { bytes, startAddress, address });
-
+                logger.debug("Going to {} of {} ", task, address);
                 destination = managementClient.createDestination(address, true);
-
-                if (authenticate) {
-                    managementClient.authorize(destination, (ByteBuffer.allocate(4)).put((byte) 0xFF).put((byte) 0xFF)
-                            .put((byte) 0xFF).put((byte) 0xFF).array());
-                }
-
-                result = managementClient.readMemory(destination, startAddress, bytes);
-                logger.debug("Reading {} bytes at memory location {} of device {} yields {} bytes",
-                        new Object[] { bytes, startAddress, address, result == null ? null : result.length });
-
-                success = true;
+                byte[] result = function.apply(destination);
+                logger.debug("Finished to {} of {}, result: {}", task, address, result == null ? null : result.length);
+                return result;
             } catch (KNXException e) {
-                logger.error("Error reading the memory for '{}': {}", address.toString(), e.getMessage());
+                logger.error("Could not {} of {}: {}", task, address, e.getMessage());
                 if (logger.isDebugEnabled()) {
                     logger.error("", e);
                 }
             } catch (InterruptedException e) {
-                logger.trace("Interripted while reading the memory for '{}': {}", address.toString(), e.getMessage());
+                logger.debug("Interrupted to {}", task);
+                return null;
             } finally {
                 if (destination != null) {
                     destination.destroy();
                 }
             }
         }
-        return result;
+        return null;
+    }
+
+    private void authorize(boolean authenticate, Destination destination) throws KNXException, InterruptedException {
+        if (authenticate) {
+            managementClient.authorize(destination, (ByteBuffer.allocate(4)).put((byte) 0xFF).put((byte) 0xFF)
+                    .put((byte) 0xFF).put((byte) 0xFF).array());
+        }
+    }
+
+    public synchronized byte[] readDeviceDescription(IndividualAddress address, int descType, boolean authenticate,
+            long timeout) {
+        String task = "read the device description";
+        return readFromManagementClient(task, timeout, address, destination -> {
+            authorize(authenticate, destination);
+            return managementClient.readDeviceDesc(destination, descType);
+        });
+    }
+
+    public synchronized byte[] readDeviceMemory(IndividualAddress address, int startAddress, int bytes,
+            boolean authenticate, long timeout) {
+        String task = MessageFormat.format("read {0} bytes at memory location {1}", bytes, startAddress);
+        return readFromManagementClient(task, timeout, address, destination -> {
+            authorize(authenticate, destination);
+            return managementClient.readMemory(destination, startAddress, bytes);
+        });
     }
 
     public synchronized byte[] readDeviceProperties(IndividualAddress address, final int interfaceObjectIndex,
             final int propertyId, final int start, final int elements, boolean authenticate, long timeout) {
-
-        boolean success = false;
-        byte[] result = null;
-        long now = System.currentTimeMillis();
-
-        while (!success && (System.currentTimeMillis() - now) < timeout) {
-            Destination destination = null;
-            try {
-                logger.debug("Reading device property {} at index {} for {}", new Object[] { propertyId,
-                        interfaceObjectIndex, address, result == null ? null : result.length });
-
-                destination = managementClient.createDestination(address, true);
-
-                if (authenticate) {
-                    managementClient.authorize(destination, (ByteBuffer.allocate(4)).put((byte) 0xFF).put((byte) 0xFF)
-                            .put((byte) 0xFF).put((byte) 0xFF).array());
-                }
-
-                result = managementClient.readProperty(destination, interfaceObjectIndex, propertyId, start, elements);
-
-                logger.debug("Reading device property {} at index {} for {} yields {} bytes", new Object[] { propertyId,
-                        interfaceObjectIndex, address, result == null ? null : result.length });
-                success = true;
-            } catch (final Exception e) {
-                logger.error("Could not read a device property: {}", e.getMessage());
-                if (logger.isDebugEnabled()) {
-                    logger.error("", e);
-                }
-            } finally {
-                if (destination != null) {
-                    destination.destroy();
-                }
-            }
-        }
-
-        return result;
+        String task = MessageFormat.format("read device property {} at index {}", propertyId, interfaceObjectIndex);
+        return readFromManagementClient(task, timeout, address, destination -> {
+            authorize(authenticate, destination);
+            return managementClient.readProperty(destination, interfaceObjectIndex, propertyId, start, elements);
+        });
     }
 
     public enum EventSource {
