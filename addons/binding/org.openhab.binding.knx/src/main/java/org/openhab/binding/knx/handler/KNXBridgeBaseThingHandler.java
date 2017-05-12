@@ -50,7 +50,6 @@ import tuwien.auto.calimero.cemi.CEMILData;
 import tuwien.auto.calimero.datapoint.CommandDP;
 import tuwien.auto.calimero.datapoint.Datapoint;
 import tuwien.auto.calimero.exception.KNXException;
-import tuwien.auto.calimero.exception.KNXIllegalArgumentException;
 import tuwien.auto.calimero.exception.KNXTimeoutException;
 import tuwien.auto.calimero.link.KNXLinkClosedException;
 import tuwien.auto.calimero.link.KNXNetworkLink;
@@ -370,14 +369,9 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
                 } catch (KNXException e) {
                     logger.warn("Cannot read value for datapoint '{}' from KNX bus: {}",
                             datapoint.getDatapoint().getMainAddress(), e.getMessage());
-
-                } catch (KNXIllegalArgumentException e) {
-                    logger.warn("Error sending KNX read request for datapoint '{}': {}",
-                            datapoint.getDatapoint().getMainAddress(), e.getMessage());
-                    updateStatus(ThingStatus.OFFLINE);
                 } catch (InterruptedException e) {
-                    logger.warn("Error sending KNX read request for datapoint '{}': {}",
-                            datapoint.getDatapoint().getMainAddress(), e.getMessage());
+                    logger.debug("Interrupted sending KNX read request");
+                    return;
                 }
                 if (!success) {
                     if (datapoint.getRetries() < datapoint.getLimit()) {
