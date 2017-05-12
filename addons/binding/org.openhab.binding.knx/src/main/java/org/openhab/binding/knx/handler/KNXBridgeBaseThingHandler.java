@@ -546,16 +546,16 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
     }
 
     /**
-     * Transforms an openHAB type (command or state) into a datapoint type value for the KNX bus.
+     * Transforms a {@link Type} into a datapoint type value for the KNX bus.
      *
      * @param type
-     *            the openHAB command or state to transform
+     *            the {@link Type} to transform
      * @param dpt
      *            the datapoint type to which should be converted
      *
      * @return the corresponding KNX datapoint type value as a string
      */
-    public String toDPTValue(Type type, String dpt) {
+    private String toDPTValue(Type type, String dpt) {
         for (KNXTypeMapper typeMapper : typeMappers) {
             String value = typeMapper.toDPTValue(type, dpt);
             if (value != null) {
