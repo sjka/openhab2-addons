@@ -36,7 +36,7 @@ Export-Package: org.openhab.binding.knx,
  org.openhab.binding.knx.internal.dpt
 Require-Bundle: org.apache.commons.lang,
  com.google.guava
-Bundle-ClassPath: lib/calimero-rxtx-2.0a3.jar,
- lib/calimero-core-2.3-beta.jar,
- lib/calimero-device-2.3-beta.jar,
+Bundle-ClassPath: lib/calimero-rxtx-2.3.jar,
+ lib/calimero-core-2.3.jar,
+ lib/calimero-device-2.3.jar,
  .
