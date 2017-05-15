@@ -42,33 +42,31 @@ public class SerialBridgeThingHandler extends KNXBridgeBaseThingHandler {
     @Override
     public KNXNetworkLink establishConnection() throws KNXException {
         String serialPort = (String) getConfig().get(SERIAL_PORT);
-
         try {
-
             RXTXVersion.getVersion();
-
-            logger.info("Establishing connection to KNX bus through FT1.2 on serial port {}.", serialPort);
-
+            logger.debug("Establishing connection to KNX bus through FT1.2 on serial port {}.", serialPort);
             return new KNXNetworkLinkFT12(serialPort, new TPSettings());
 
         } catch (NoClassDefFoundError e) {
             throw new KNXException(
                     "The serial FT1.2 KNX connection requires the RXTX libraries to be available, but they could not be found!",
                     e);
-        } catch (KNXException knxe) {
-            if (knxe.getMessage().startsWith("can not open serial port")) {
+        } catch (KNXException e) {
+            if (e.getMessage().startsWith("can not open serial port")) {
                 StringBuilder sb = new StringBuilder("Available ports are:\n");
                 Enumeration<?> portList = CommPortIdentifier.getPortIdentifiers();
                 while (portList.hasMoreElements()) {
                     CommPortIdentifier id = (CommPortIdentifier) portList.nextElement();
                     if (id.getPortType() == CommPortIdentifier.PORT_SERIAL) {
-                        sb.append(id.getName() + "\n");
+                        sb.append(id.getName());
+                        sb.append("\n");
                     }
                 }
                 sb.deleteCharAt(sb.length() - 1);
-                knxe = new KNXException("Serial port '" + serialPort + "' could not be opened. " + sb.toString());
+                throw new KNXException("Serial port '" + serialPort + "' could not be opened. " + sb.toString());
+            } else {
+                throw e;
             }
-            throw knxe;
         }
     }
 }
