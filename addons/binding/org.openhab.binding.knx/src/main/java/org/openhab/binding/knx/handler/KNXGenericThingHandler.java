@@ -36,9 +36,8 @@ import org.eclipse.smarthome.core.types.State;
 import org.eclipse.smarthome.core.types.Type;
 import org.openhab.binding.knx.GroupAddressListener;
 import org.openhab.binding.knx.IndividualAddressListener;
-import org.openhab.binding.knx.internal.channel.KNXChannelSelectorProxy;
-import org.openhab.binding.knx.internal.channel.KNXChannelSelectorProxy.KNXChannelSelector;
-import org.openhab.binding.knx.internal.dpt.KNXCoreTypeMapper;
+import org.openhab.binding.knx.KNXChannelSelectorProxy;
+import org.openhab.binding.knx.KNXChannelSelectorProxy.KNXChannelSelector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -576,7 +575,7 @@ public class KNXGenericThingHandler extends BaseThingHandler
 
         if (dpt != null) {
 
-            if (KNXCoreTypeMapper.toTypeClass(dpt) == null) {
+            if (!bridge.isDPTSupported(dpt)) {
                 logger.warn("DPT {} is not supported by the KNX binding.", dpt);
                 return;
             }
@@ -643,7 +642,7 @@ public class KNXGenericThingHandler extends BaseThingHandler
             try {
                 if (getThing().getStatus() == ThingStatus.ONLINE && getBridge().getStatus() == ThingStatus.ONLINE) {
 
-                    if (KNXCoreTypeMapper.toTypeClass(dpt) == null) {
+                    if (!((KNXBridgeBaseThingHandler) getBridge().getHandler()).isDPTSupported(dpt)) {
                         logger.warn("DPT '{}' is not supported by the KNX binding", dpt);
                         return;
                     }

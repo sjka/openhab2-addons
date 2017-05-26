@@ -34,8 +34,8 @@ import org.openhab.binding.knx.GroupAddressListener;
 import org.openhab.binding.knx.IndividualAddressListener;
 import org.openhab.binding.knx.KNXBindingConstants;
 import org.openhab.binding.knx.KNXBusListener;
+import org.openhab.binding.knx.KNXTypeMapper;
 import org.openhab.binding.knx.TelegramListener;
-import org.openhab.binding.knx.internal.dpt.KNXTypeMapper;
 import org.openhab.binding.knx.internal.factory.KNXThreadPoolFactory;
 import org.openhab.binding.knx.internal.handler.BridgeConfiguration;
 import org.openhab.binding.knx.internal.handler.RetryDatapoint;
@@ -232,28 +232,28 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
         LogManager.getManager().removeWriter(null, logAdapter);
     }
 
-    protected final boolean registerGroupAddressListener(GroupAddressListener listener) {
+    public final boolean registerGroupAddressListener(GroupAddressListener listener) {
         if (listener == null) {
             throw new IllegalArgumentException("GroupAddressListener must not be null");
         }
         return groupAddressListeners.contains(listener) ? true : groupAddressListeners.add(listener);
     }
 
-    protected final boolean unregisterGroupAddressListener(GroupAddressListener listener) {
+    public final boolean unregisterGroupAddressListener(GroupAddressListener listener) {
         if (listener == null) {
             throw new IllegalArgumentException("GroupAddressListener must not be null");
         }
         return groupAddressListeners.remove(listener);
     }
 
-    protected final boolean registerIndividualAddressListener(IndividualAddressListener listener) {
+    public final boolean registerIndividualAddressListener(IndividualAddressListener listener) {
         if (listener == null) {
             throw new IllegalArgumentException("IndividualAddressListener must not be null");
         }
         return individualAddressListeners.contains(listener) ? true : individualAddressListeners.add(listener);
     }
 
-    protected final boolean unregisterIndividualAddressListener(IndividualAddressListener listener) {
+    public final boolean unregisterIndividualAddressListener(IndividualAddressListener listener) {
         if (listener == null) {
             throw new IllegalArgumentException("IndividualAddressListener must not be null");
         }
@@ -531,6 +531,15 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
         return null;
     }
 
+    public final boolean isDPTSupported(String dpt) {
+        for (KNXTypeMapper typeMapper : typeMappers) {
+            if (typeMapper.toTypeClass(dpt) != null) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public final Type getType(GroupAddress destination, String dpt, byte[] asdu) {
         Datapoint datapoint = new CommandDP(destination, getThing().getUID().toString(), 0, dpt);
         return getType(datapoint, asdu);
@@ -725,7 +734,4 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
                 new DecimalType(errorsSinceInterval));
     }
 
-    public String getETSProjectFilename() {
-        return config.getKnxProj();
-    }
 }

@@ -22,7 +22,6 @@ public class BridgeConfiguration {
 
     private BigDecimal autoReconnectPeriod;
     private Boolean enableDiscovery;
-    private String knxProj;
     private BigDecimal readingPause;
     private BigDecimal readRetriesLimit;
     private BigDecimal responseTimeout;
@@ -34,10 +33,6 @@ public class BridgeConfiguration {
 
     public Boolean getEnableDiscovery() {
         return enableDiscovery;
-    }
-
-    public String getKnxProj() {
-        return knxProj;
     }
 
     public BigDecimal getReadingPause() {

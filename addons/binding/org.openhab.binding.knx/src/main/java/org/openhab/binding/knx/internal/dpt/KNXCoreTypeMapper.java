@@ -31,6 +31,7 @@ import org.eclipse.smarthome.core.library.types.StopMoveType;
 import org.eclipse.smarthome.core.library.types.StringType;
 import org.eclipse.smarthome.core.library.types.UpDownType;
 import org.eclipse.smarthome.core.types.Type;
+import org.openhab.binding.knx.KNXTypeMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -810,7 +811,8 @@ public class KNXCoreTypeMapper implements KNXTypeMapper {
      * @param dptId the datapoint type id
      * @return the openHAB type (command or state) class or {@code null} if the datapoint type id is not supported.
      */
-    public static Class<? extends Type> toTypeClass(String dptId) {
+    @Override
+    public Class<? extends Type> toTypeClass(String dptId) {
         Class<? extends Type> ohClass = dptTypeMap.get(dptId);
         if (ohClass == null) {
             int mainNumber = getMainNumber(dptId);

@@ -12,6 +12,6 @@
 <scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" enabled="true" immediate="true" name="org.openhab.binding.knx.internal.dpt.KNXTypeMapper">
    <implementation class="org.openhab.binding.knx.internal.dpt.KNXCoreTypeMapper"/>
    <service>
-      <provide interface="org.openhab.binding.knx.internal.dpt.KNXTypeMapper"/>
+      <provide interface="org.openhab.binding.knx.KNXTypeMapper"/>
    </service>
 </scr:component>
