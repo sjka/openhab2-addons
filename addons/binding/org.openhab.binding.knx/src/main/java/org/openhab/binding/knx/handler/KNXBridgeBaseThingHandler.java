@@ -540,6 +540,16 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
         return false;
     }
 
+    public final Class<? extends Type> toTypeClass(String dpt) {
+        for (KNXTypeMapper typeMapper : typeMappers) {
+            Class<? extends Type> typeClass = typeMapper.toTypeClass(dpt);
+            if (typeClass != null) {
+                return typeClass;
+            }
+        }
+        return null;
+    }
+
     public final Type getType(GroupAddress destination, String dpt, byte[] asdu) {
         Datapoint datapoint = new CommandDP(destination, getThing().getUID().toString(), 0, dpt);
         return getType(datapoint, asdu);

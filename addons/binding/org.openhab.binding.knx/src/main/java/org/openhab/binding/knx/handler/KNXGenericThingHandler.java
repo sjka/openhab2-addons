@@ -36,8 +36,8 @@ import org.eclipse.smarthome.core.types.State;
 import org.eclipse.smarthome.core.types.Type;
 import org.openhab.binding.knx.GroupAddressListener;
 import org.openhab.binding.knx.IndividualAddressListener;
-import org.openhab.binding.knx.KNXChannelSelectorProxy;
-import org.openhab.binding.knx.KNXChannelSelectorProxy.KNXChannelSelector;
+import org.openhab.binding.knx.internal.channel.KNXChannelSelector;
+import org.openhab.binding.knx.internal.channel.KNXChannelType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -62,8 +62,6 @@ public class KNXGenericThingHandler extends BaseThingHandler
         implements IndividualAddressListener, GroupAddressListener {
 
     private final Logger logger = LoggerFactory.getLogger(KNXGenericThingHandler.class);
-
-    protected KNXChannelSelectorProxy knxChannelSelectorProxy = new KNXChannelSelectorProxy();
 
     protected ItemChannelLinkRegistry itemChannelLinkRegistry;
     protected ArrayList<ChannelUID> blockedChannels = new ArrayList<ChannelUID>();
@@ -147,17 +145,13 @@ public class KNXGenericThingHandler extends BaseThingHandler
         for (Channel channel : getThing().getChannels()) {
             Configuration channelConfiguration = channel.getConfiguration();
             String channelID = channel.getChannelTypeUID().getId();
-            KNXChannelSelector selector = KNXChannelSelector.getValueSelectorFromChannelTypeId(channelID);
+            KNXChannelType selector = KNXChannelSelector.getValueSelectorFromChannelTypeId(channelID);
             if (selector != null) {
                 try {
-                    groupAddresses
-                            .addAll(knxChannelSelectorProxy.getReadAddresses(selector, channelConfiguration, null));
-                    groupAddresses
-                            .addAll(knxChannelSelectorProxy.getWriteAddresses(selector, channelConfiguration, null));
-                    groupAddresses
-                            .addAll(knxChannelSelectorProxy.getTransmitAddresses(selector, channelConfiguration, null));
-                    groupAddresses
-                            .addAll(knxChannelSelectorProxy.getUpdateAddresses(selector, channelConfiguration, null));
+                    groupAddresses.addAll(selector.getReadAddresses(channelConfiguration));
+                    groupAddresses.addAll(selector.getWriteAddresses(channelConfiguration, null));
+                    groupAddresses.addAll(selector.getTransmitAddresses(channelConfiguration, null));
+                    groupAddresses.addAll(selector.getUpdateAddresses(channelConfiguration, null));
                 } catch (KNXFormatException e) {
                     logger.error(
                             "An error occurred while adding the group addresses to be listened to on channel {}: {}",
@@ -207,17 +201,14 @@ public class KNXGenericThingHandler extends BaseThingHandler
         Boolean mustRead = (Boolean) channelConfiguration.get(READ);
         BigDecimal readInterval = (BigDecimal) channelConfiguration.get(INTERVAL);
 
-        KNXChannelSelector selector = KNXChannelSelector.getValueSelectorFromChannelTypeId(
+        KNXChannelType selector = KNXChannelSelector.getValueSelectorFromChannelTypeId(
                 getThing().getChannel(channelUID.getId()).getChannelTypeUID().getId());
 
         if (selector != null) {
             try {
-                for (GroupAddress address : knxChannelSelectorProxy.getReadAddresses(selector, channelConfiguration,
-                        null)) {
+                for (GroupAddress address : selector.getReadAddresses(channelConfiguration)) {
                     if (mustRead || readInterval.intValue() > 0) {
-                        scheduleReadJob(address,
-                                knxChannelSelectorProxy.getDPT(address, selector, channelConfiguration, null), true,
-                                BigDecimal.ZERO);
+                        scheduleReadJob(address, selector.getDPT(address, channelConfiguration), true, BigDecimal.ZERO);
                     }
                 }
             } catch (KNXFormatException e) {
@@ -238,16 +229,14 @@ public class KNXGenericThingHandler extends BaseThingHandler
             Boolean mustRead = (Boolean) channelConfiguration.get(READ);
             BigDecimal readInterval = (BigDecimal) channelConfiguration.get(INTERVAL);
 
-            KNXChannelSelector selector = KNXChannelSelector
+            KNXChannelType selector = KNXChannelSelector
                     .getValueSelectorFromChannelTypeId(channel.getChannelTypeUID().getId());
 
             if (selector != null) {
                 try {
-                    for (GroupAddress address : knxChannelSelectorProxy.getReadAddresses(selector, channelConfiguration,
-                            null)) {
+                    for (GroupAddress address : selector.getReadAddresses(channelConfiguration)) {
 
-                        scheduleReadJob(address,
-                                knxChannelSelectorProxy.getDPT(address, selector, channelConfiguration, null), mustRead,
+                        scheduleReadJob(address, selector.getDPT(address, channelConfiguration), mustRead,
                                 readInterval);
                     }
                 } catch (KNXFormatException e) {
@@ -361,7 +350,7 @@ public class KNXGenericThingHandler extends BaseThingHandler
             default: {
                 Channel theChannel = getThing().getChannel(channelUID.getId());
                 if (theChannel != null) {
-                    KNXChannelSelector selector = KNXChannelSelector
+                    KNXChannelType selector = KNXChannelSelector
                             .getValueSelectorFromChannelTypeId(theChannel.getChannelTypeUID().getId());
 
                     if (selector != null) {
@@ -370,8 +359,7 @@ public class KNXGenericThingHandler extends BaseThingHandler
                                     .getConfiguration();
 
                             if (channelConfiguration != null) {
-                                Type convertedType = knxChannelSelectorProxy.convertType(selector, channelConfiguration,
-                                        newState);
+                                Type convertedType = selector.convertType(channelConfiguration, newState);
                                 logger.trace("State to Channel {} {} {} {}/{} : {} -> {}", channelUID.getId(),
                                         getThing().getChannel(channelUID.getId()).getConfiguration().get(DPT),
                                         getThing().getChannel(channelUID.getId()).getAcceptedItemType(),
@@ -379,12 +367,10 @@ public class KNXGenericThingHandler extends BaseThingHandler
                                         getThing().getChannel(channelUID.getId()).getConfiguration().get(WRITE),
                                         newState, convertedType);
                                 if (convertedType != null) {
-                                    for (GroupAddress address : knxChannelSelectorProxy.getWriteAddresses(selector,
-                                            channelConfiguration, convertedType)) {
+                                    for (GroupAddress address : selector.getWriteAddresses(channelConfiguration,
+                                            convertedType)) {
                                         ((KNXBridgeBaseThingHandler) getBridge().getHandler()).writeToKNX(address,
-                                                knxChannelSelectorProxy.getDPT(address, selector, channelConfiguration,
-                                                        convertedType),
-                                                convertedType);
+                                                selector.getDPT(address, channelConfiguration), convertedType);
                                     }
                                 }
                             } else {
@@ -434,7 +420,7 @@ public class KNXGenericThingHandler extends BaseThingHandler
 
             Channel theChannel = getThing().getChannel(channelUID.getId());
             if (theChannel != null) {
-                KNXChannelSelector selector = KNXChannelSelector
+                KNXChannelType selector = KNXChannelSelector
                         .getValueSelectorFromChannelTypeId(theChannel.getChannelTypeUID().getId());
 
                 if (selector != null) {
@@ -443,10 +429,9 @@ public class KNXGenericThingHandler extends BaseThingHandler
                                 .getConfiguration();
 
                         if (channelConfiguration != null) {
-                            for (GroupAddress address : knxChannelSelectorProxy.getReadAddresses(selector,
-                                    channelConfiguration, command)) {
-                                scheduleReadJob(address, knxChannelSelectorProxy.getDPT(address, selector,
-                                        channelConfiguration, command), true, BigDecimal.ZERO);
+                            for (GroupAddress address : selector.getReadAddresses(channelConfiguration)) {
+                                scheduleReadJob(address, selector.getDPT(address, channelConfiguration), true,
+                                        BigDecimal.ZERO);
                             }
                         } else {
                             logger.warn("The configuration of channel '{}' is empty", channelUID.getId());
@@ -475,7 +460,7 @@ public class KNXGenericThingHandler extends BaseThingHandler
                     Channel theChannel = getThing().getChannel(channelUID.getId());
                     if (theChannel != null) {
 
-                        KNXChannelSelector selector = KNXChannelSelector
+                        KNXChannelType selector = KNXChannelSelector
                                 .getValueSelectorFromChannelTypeId(theChannel.getChannelTypeUID().getId());
 
                         if (selector != null) {
@@ -484,8 +469,7 @@ public class KNXGenericThingHandler extends BaseThingHandler
                                         .getConfiguration();
 
                                 if (channelConfiguration != null) {
-                                    Type convertedType = knxChannelSelectorProxy.convertType(selector,
-                                            channelConfiguration, command);
+                                    Type convertedType = selector.convertType(channelConfiguration, command);
 
                                     logger.trace("Command to Channel {} {} {} {}/{} : {} -> {}", channelUID.getId(),
                                             getThing().getChannel(channelUID.getId()).getConfiguration().get(DPT),
@@ -495,14 +479,11 @@ public class KNXGenericThingHandler extends BaseThingHandler
                                             command, convertedType);
 
                                     if (convertedType != null) {
-                                        for (GroupAddress address : knxChannelSelectorProxy.getWriteAddresses(selector,
-                                                channelConfiguration, convertedType)) {
+                                        for (GroupAddress address : selector.getWriteAddresses(channelConfiguration,
+                                                convertedType)) {
                                             blockedChannels.add(channelUID);
-                                            ((KNXBridgeBaseThingHandler) getBridge().getHandler())
-                                                    .writeToKNX(address,
-                                                            knxChannelSelectorProxy.getDPT(address, selector,
-                                                                    channelConfiguration, convertedType),
-                                                            convertedType);
+                                            ((KNXBridgeBaseThingHandler) getBridge().getHandler()).writeToKNX(address,
+                                                    selector.getDPT(address, channelConfiguration), convertedType);
                                         }
                                     }
                                 } else {
@@ -547,23 +528,20 @@ public class KNXGenericThingHandler extends BaseThingHandler
                 source, destination);
 
         for (Channel channel : getThing().getChannels()) {
-            KNXChannelSelector selector = KNXChannelSelector
+            KNXChannelType selector = KNXChannelSelector
                     .getValueSelectorFromChannelTypeId(channel.getChannelTypeUID().getId());
 
             if (selector != null) {
                 try {
                     Configuration channelConfiguration = channel.getConfiguration();
-                    Set<GroupAddress> addresses = knxChannelSelectorProxy.getReadAddresses(selector,
-                            channelConfiguration, null);
-                    addresses
-                            .addAll(knxChannelSelectorProxy.getTransmitAddresses(selector, channelConfiguration, null));
+                    Set<GroupAddress> addresses = selector.getReadAddresses(channelConfiguration);
+                    addresses.addAll(selector.getTransmitAddresses(channelConfiguration, null));
 
                     if (addresses.contains(destination)) {
                         logger.trace("Thing {} processes a Group Write telegram for destination '{}' for channel '{}'",
                                 getThing().getUID(), destination, channel.getUID());
                         processDataReceived(bridge, destination, asdu,
-                                knxChannelSelectorProxy.getDPT(destination, selector, channelConfiguration, null),
-                                channel.getUID());
+                                selector.getDPT(destination, channelConfiguration), channel.getUID());
                     }
 
                 } catch (KNXFormatException e) {

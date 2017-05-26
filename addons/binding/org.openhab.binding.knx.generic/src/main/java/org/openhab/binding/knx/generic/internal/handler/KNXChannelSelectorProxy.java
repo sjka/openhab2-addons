@@ -6,7 +6,7 @@
  * which accompanies this distribution, and is available at
  * http://www.eclipse.org/legal/epl-v10.html
  */
-package org.openhab.binding.knx;
+package org.openhab.binding.knx.generic.internal.handler;
 
 import static org.openhab.binding.knx.KNXBindingConstants.*;
 
@@ -20,7 +20,7 @@ import org.eclipse.smarthome.core.library.types.PercentType;
 import org.eclipse.smarthome.core.library.types.StopMoveType;
 import org.eclipse.smarthome.core.library.types.UpDownType;
 import org.eclipse.smarthome.core.types.Type;
-import org.openhab.binding.knx.internal.dpt.KNXCoreTypeMapper;
+import org.openhab.binding.knx.handler.KNXBridgeBaseThingHandler;
 
 import com.google.common.base.Predicates;
 import com.google.common.collect.Sets;
@@ -176,7 +176,7 @@ public class KNXChannelSelectorProxy {
 
             @Override
             public Type convertType(KNXChannelSelectorProxy knxChannelSelectorProxy, Configuration configuration,
-                    Type type) {
+                    Type type, KNXBridgeBaseThingHandler bridgeHandler) {
                 if (type instanceof OnOffType) {
                     if (configuration.get(SWITCH_GA) != null) {
                         return type;
@@ -256,7 +256,7 @@ public class KNXChannelSelectorProxy {
 
             @Override
             public Type convertType(KNXChannelSelectorProxy knxChannelSelectorProxy, Configuration configuration,
-                    Type type) {
+                    Type type, KNXBridgeBaseThingHandler bridgeHandler) {
                 if (type instanceof UpDownType) {
                     if (configuration.get(UP_DOWN_GA) != null) {
                         return type;
@@ -464,9 +464,8 @@ public class KNXChannelSelectorProxy {
 
             @Override
             public Type convertType(KNXChannelSelectorProxy knxChannelSelectorProxy, Configuration configuration,
-                    Type type) {
-                Class<? extends Type> convertedType = new KNXCoreTypeMapper()
-                        .toTypeClass((String) configuration.get(DPT));
+                    Type type, KNXBridgeBaseThingHandler bridgeHandler) {
+                Class<? extends Type> convertedType = bridgeHandler.toTypeClass((String) configuration.get(DPT));
                 if (convertedType == type.getClass()) {
                     return type;
                 } else {
@@ -527,8 +526,8 @@ public class KNXChannelSelectorProxy {
             throw new IllegalArgumentException(channelTypeID + " is not a valid value selector");
         }
 
-        public Type convertType(KNXChannelSelectorProxy knxChannelSelectorProxy, Configuration configuration,
-                Type type) {
+        public Type convertType(KNXChannelSelectorProxy knxChannelSelectorProxy, Configuration configuration, Type type,
+                KNXBridgeBaseThingHandler bridgeHandler) {
             return type;
         }
 
@@ -566,8 +565,9 @@ public class KNXChannelSelectorProxy {
         return selector.getUpdateAddresses(this, configuration, type);
     }
 
-    public Type convertType(KNXChannelSelector selector, Configuration configuration, Type type) {
-        return selector.convertType(this, configuration, type);
+    public Type convertType(KNXChannelSelector selector, Configuration configuration, Type type,
+            KNXBridgeBaseThingHandler bridgeHandler) {
+        return selector.convertType(this, configuration, type, bridgeHandler);
     }
 
 }

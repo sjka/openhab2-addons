@@ -36,8 +36,7 @@ import org.eclipse.smarthome.core.types.State;
 import org.eclipse.smarthome.core.types.Type;
 import org.openhab.binding.knx.GroupAddressListener;
 import org.openhab.binding.knx.IndividualAddressListener;
-import org.openhab.binding.knx.KNXChannelSelectorProxy;
-import org.openhab.binding.knx.KNXChannelSelectorProxy.KNXChannelSelector;
+import org.openhab.binding.knx.generic.internal.handler.KNXChannelSelectorProxy.KNXChannelSelector;
 import org.openhab.binding.knx.handler.KNXBridgeBaseThingHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -377,7 +376,7 @@ public class KNXGenericThingHandler extends BaseThingHandler
 
                             if (channelConfiguration != null) {
                                 Type convertedType = knxChannelSelectorProxy.convertType(selector, channelConfiguration,
-                                        newState);
+                                        newState, getMainBridgeHandler());
                                 logger.trace("State to Channel {} {} {} {}/{} : {} -> {}", channelUID.getId(),
                                         getThing().getChannel(channelUID.getId()).getConfiguration().get(DPT),
                                         getThing().getChannel(channelUID.getId()).getAcceptedItemType(),
@@ -489,7 +488,7 @@ public class KNXGenericThingHandler extends BaseThingHandler
 
                                 if (channelConfiguration != null) {
                                     Type convertedType = knxChannelSelectorProxy.convertType(selector,
-                                            channelConfiguration, command);
+                                            channelConfiguration, command, getMainBridgeHandler());
 
                                     logger.trace("Command to Channel {} {} {} {}/{} : {} -> {}", channelUID.getId(),
                                             getThing().getChannel(channelUID.getId()).getConfiguration().get(DPT),
