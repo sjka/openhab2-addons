@@ -29,7 +29,6 @@ import org.eclipse.smarthome.core.thing.ThingStatus;
 import org.eclipse.smarthome.core.thing.ThingStatusDetail;
 import org.eclipse.smarthome.core.thing.ThingStatusInfo;
 import org.eclipse.smarthome.core.thing.binding.BaseThingHandler;
-import org.eclipse.smarthome.core.thing.link.ItemChannelLinkRegistry;
 import org.eclipse.smarthome.core.types.Command;
 import org.eclipse.smarthome.core.types.RefreshType;
 import org.eclipse.smarthome.core.types.State;
@@ -63,8 +62,6 @@ import tuwien.auto.calimero.mgmt.PropertyAccess.PID;
 public class KNXBasicThingHandler extends BaseThingHandler implements IndividualAddressListener, GroupAddressListener {
 
     private final Logger logger = LoggerFactory.getLogger(KNXBasicThingHandler.class);
-
-    protected ItemChannelLinkRegistry itemChannelLinkRegistry;
 
     // the physical address of the KNX actor represented by this Thing
     protected IndividualAddress address;
@@ -108,9 +105,8 @@ public class KNXBasicThingHandler extends BaseThingHandler implements Individual
     // Property IDs for device information;
     private static final int HARDWARE_TYPE = 78;
 
-    public KNXBasicThingHandler(Thing thing, ItemChannelLinkRegistry registry) {
+    public KNXBasicThingHandler(Thing thing) {
         super(thing);
-        this.itemChannelLinkRegistry = registry;
     }
 
     @Override
@@ -436,19 +432,6 @@ public class KNXBasicThingHandler extends BaseThingHandler implements Individual
             Type type = bridge.getType(destination, dpt, asdu);
 
             if (type != null) {
-                // bridge.logEvent(EventSource.EMPTY, channelUID, type);
-
-                Set<String> linkedItems = itemChannelLinkRegistry.getLinkedItemNames(channelUID);
-                for (String anItem : linkedItems) {
-                    Set<ChannelUID> boundChannels = itemChannelLinkRegistry.getBoundChannels(anItem);
-                    for (ChannelUID aBoundChannel : boundChannels) {
-                        if (aBoundChannel.getBindingId().equals(getThing().getUID().getBindingId())
-                                && !aBoundChannel.getAsString().equals(channelUID.getAsString())) {
-                            logger.trace("Adding channel '{}' of Item '{}' the list of blocked channels", aBoundChannel,
-                                    anItem);
-                        }
-                    }
-                }
                 if (slave) {
                     if (type instanceof Command) {
                         postCommand(channelUID, (Command) type);

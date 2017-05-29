@@ -16,20 +16,16 @@ import java.util.Locale;
 
 import org.apache.commons.lang.RandomStringUtils;
 import org.eclipse.smarthome.config.core.Configuration;
-import org.eclipse.smarthome.core.i18n.LocaleProvider;
 import org.eclipse.smarthome.core.thing.Bridge;
 import org.eclipse.smarthome.core.thing.Thing;
 import org.eclipse.smarthome.core.thing.ThingTypeUID;
 import org.eclipse.smarthome.core.thing.ThingUID;
 import org.eclipse.smarthome.core.thing.binding.BaseThingHandlerFactory;
 import org.eclipse.smarthome.core.thing.binding.ThingHandler;
-import org.eclipse.smarthome.core.thing.link.ItemChannelLinkRegistry;
-import org.eclipse.smarthome.core.thing.type.ThingType;
-import org.eclipse.smarthome.core.thing.type.ThingTypeRegistry;
 import org.openhab.binding.knx.KNXTypeMapper;
 import org.openhab.binding.knx.handler.IPBridgeThingHandler;
-import org.openhab.binding.knx.handler.KNXBridgeBaseThingHandler;
 import org.openhab.binding.knx.handler.KNXBasicThingHandler;
+import org.openhab.binding.knx.handler.KNXBridgeBaseThingHandler;
 import org.openhab.binding.knx.handler.SerialBridgeThingHandler;
 
 import com.google.common.collect.Lists;
@@ -47,33 +43,6 @@ public class KNXHandlerFactory extends BaseThingHandlerFactory {
 
     private final Collection<KNXTypeMapper> typeMappers = new HashSet<KNXTypeMapper>();
     private final Collection<KNXBridgeBaseThingHandler> bridgeHandlers = new HashSet<KNXBridgeBaseThingHandler>();
-    private ItemChannelLinkRegistry itemChannelLinkRegistry;
-    private ThingTypeRegistry thingTypeRegistry;
-    private LocaleProvider localeProvider;
-
-    protected void setItemChannelLinkRegistry(ItemChannelLinkRegistry registry) {
-        itemChannelLinkRegistry = registry;
-    }
-
-    protected void unsetItemChannelLinkRegistry(ItemChannelLinkRegistry registry) {
-        itemChannelLinkRegistry = null;
-    }
-
-    protected void setThingTypeRegistry(ThingTypeRegistry thingTypeRegistry) {
-        this.thingTypeRegistry = thingTypeRegistry;
-    }
-
-    protected void unsetThingTypeRegistry(ThingTypeRegistry thingTypeRegistry) {
-        this.thingTypeRegistry = null;
-    }
-
-    protected void setLocaleProvider(LocaleProvider localeProvider) {
-        this.localeProvider = localeProvider;
-    }
-
-    protected void unsetLocaleProvider(LocaleProvider localeProvider) {
-        this.localeProvider = null;
-    }
 
     public void addKNXTypeMapper(KNXTypeMapper typeMapper) {
         typeMappers.add(typeMapper);
@@ -119,7 +88,7 @@ public class KNXHandlerFactory extends BaseThingHandlerFactory {
         } else if (thing.getThingTypeUID().equals(THING_TYPE_SERIAL_BRIDGE)) {
             return new SerialBridgeThingHandler((Bridge) thing);
         } else if (thing.getThingTypeUID().equals(THING_TYPE_BASIC)) {
-            return new KNXBasicThingHandler(thing, itemChannelLinkRegistry);
+            return new KNXBasicThingHandler(thing);
         }
         return null;
     }
@@ -153,10 +122,6 @@ public class KNXHandlerFactory extends BaseThingHandlerFactory {
             String randomID = RandomStringUtils.randomAlphabetic(16).toLowerCase(Locale.ENGLISH);
             return new ThingUID(thingTypeUID, randomID, bridgeUID.getId());
         }
-    }
-
-    public ThingType getThingType(ThingTypeUID thingTypeUID) {
-        return thingTypeRegistry.getThingType(thingTypeUID, localeProvider.getLocale());
     }
 
     @Override
