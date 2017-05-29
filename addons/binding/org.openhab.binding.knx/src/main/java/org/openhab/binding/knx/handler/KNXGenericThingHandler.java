@@ -256,13 +256,18 @@ public class KNXGenericThingHandler extends BaseThingHandler
     private void scheduleReadJobs() {
         cancelReadFutures();
 
-        forAllChannels((selector, channelConfiguration) -> {
-            Boolean mustRead = (Boolean) channelConfiguration.get(READ);
-            BigDecimal readInterval = (BigDecimal) channelConfiguration.get(INTERVAL);
-            for (GroupAddress address : selector.getReadAddresses(channelConfiguration)) {
-                scheduleReadJob(address, selector.getDPT(address, channelConfiguration), mustRead, readInterval);
+        for (Channel channel : getThing().getChannels()) {
+            if (isLinked(channel.getUID().getId())) {
+                withKNXType(channel, (selector, channelConfiguration) -> {
+                    Boolean mustRead = (Boolean) channelConfiguration.get(READ);
+                    BigDecimal readInterval = (BigDecimal) channelConfiguration.get(INTERVAL);
+                    for (GroupAddress address : selector.getReadAddresses(channelConfiguration)) {
+                        scheduleReadJob(address, selector.getDPT(address, channelConfiguration), mustRead,
+                                readInterval);
+                    }
+                });
             }
-        });
+        }
     }
 
     private void scheduleReadJob(GroupAddress groupAddress, String dpt, boolean immediate, BigDecimal readInterval) {
