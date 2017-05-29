@@ -131,7 +131,7 @@ public class KNXGenericThingHandler extends BaseThingHandler
 
                 if ((pollingJob == null || pollingJob.isCancelled())) {
                     logger.trace("'{}' will be polled every {} ms", getThing().getUID(), pollingInterval);
-                    pollingJob = knxScheduler.scheduleWithFixedDelay(pollingRunnable, pollingInterval / 4,
+                    pollingJob = knxScheduler.scheduleWithFixedDelay(() -> pollDeviceStatus(), pollingInterval / 4,
                             pollingInterval, TimeUnit.MILLISECONDS);
                 }
             } else {
@@ -660,31 +660,27 @@ public class KNXGenericThingHandler extends BaseThingHandler
         }
     };
 
-    private Runnable pollingRunnable = new Runnable() {
-
-        @Override
-        public void run() {
-            try {
-                if (address != null && getBridge().getStatus() == ThingStatus.ONLINE) {
-                    logger.debug("Polling the individual address {}", address.toString());
-                    boolean isReachable = ((KNXBridgeBaseThingHandler) getBridge().getHandler()).isReachable(address);
-                    if (isReachable) {
-                        updateStatus(ThingStatus.ONLINE);
-                        if (!filledDescription) {
-                            if (descriptionJob == null || descriptionJob.isCancelled()) {
-                                descriptionJob = knxScheduler.schedule(descriptionRunnable, 0, TimeUnit.MILLISECONDS);
-                            }
+    private void pollDeviceStatus() {
+        try {
+            if (address != null && getBridge().getStatus() == ThingStatus.ONLINE) {
+                logger.debug("Polling the individual address {}", address.toString());
+                boolean isReachable = ((KNXBridgeBaseThingHandler) getBridge().getHandler()).isReachable(address);
+                if (isReachable) {
+                    updateStatus(ThingStatus.ONLINE);
+                    if (!filledDescription) {
+                        if (descriptionJob == null || descriptionJob.isCancelled()) {
+                            descriptionJob = knxScheduler.schedule(descriptionRunnable, 0, TimeUnit.MILLISECONDS);
                         }
-                    } else {
-                        updateStatus(ThingStatus.OFFLINE);
                     }
+                } else {
+                    updateStatus(ThingStatus.OFFLINE);
                 }
-            } catch (Exception e) {
-                logger.error("An exception occurred while testing the reachability of a Thing '{}' : {}",
-                        getThing().getUID(), e);
             }
+        } catch (Exception e) {
+            logger.error("An exception occurred while testing the reachability of a Thing '{}' : {}",
+                    getThing().getUID(), e);
         }
-    };
+    }
 
     private Runnable descriptionRunnable = new Runnable() {
 
