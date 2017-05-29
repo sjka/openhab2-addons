@@ -499,14 +499,13 @@ public class KNXGenericThingHandler extends BaseThingHandler
             try {
                 if (getThing().getStatus() == ThingStatus.ONLINE && getBridge().getStatus() == ThingStatus.ONLINE) {
 
-                    if (!((KNXBridgeBaseThingHandler) getBridge().getHandler()).isDPTSupported(dpt)) {
+                    if (!getBridgeHandler().isDPTSupported(dpt)) {
                         logger.warn("DPT '{}' is not supported by the KNX binding", dpt);
                         return;
                     }
 
                     Datapoint datapoint = new CommandDP(address, getThing().getUID().toString(), 0, dpt);
-                    ((KNXBridgeBaseThingHandler) getBridge().getHandler()).readDatapoint(datapoint,
-                            ((KNXBridgeBaseThingHandler) getBridge().getHandler()).getReadRetriesLimit());
+                    getBridgeHandler().readDatapoint(datapoint, getBridgeHandler().getReadRetriesLimit());
                 }
             } catch (Exception e) {
                 logger.error(
