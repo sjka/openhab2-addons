@@ -96,11 +96,11 @@ public class KNXBasicThingHandler extends BaseThingHandler implements Individual
     // Interface Object indexes
     private static final int DEVICE_OBJECT = 0; // Device Object
     private static final int ADDRESS_TABLE_OBJECT = 1; // Addresstable Object
-    private static final int ASSOCIATION_TABLE_OBJECT = 2; // Associationtable Object
-    private static final int APPLICATION_PROGRAM_TABLE = 3; // Application Program Object
-    private static final int INTERFACE_PROGRAM_OBJECT = 4; // Interface Program Object
+    // private static final int ASSOCIATION_TABLE_OBJECT = 2; // Associationtable Object
+    // private static final int APPLICATION_PROGRAM_TABLE = 3; // Application Program Object
+    // private static final int INTERFACE_PROGRAM_OBJECT = 4; // Interface Program Object
     private static final int GROUPOBJECT_OBJECT = 9; // Group Object Object
-    private static final int KNXNET_IP_OBJECT = 11; // KNXnet/IP Parameter Object
+    // private static final int KNXNET_IP_OBJECT = 11; // KNXnet/IP Parameter Object
 
     // Property IDs for device information;
     private static final int HARDWARE_TYPE = 78;
