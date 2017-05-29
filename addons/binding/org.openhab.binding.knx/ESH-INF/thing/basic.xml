@@ -26,6 +26,12 @@
                 <required>true</required>
                 <default>false</default>
             </parameter>
+            <parameter name="interval" type="integer">
+                <label>Interval</label>
+                <description>Interval between attempts to contact the device, in seconds</description>
+                <required>true</required>
+                <default>60</default>
+            </parameter>
 		</config-description>
 	</thing-type>
 	

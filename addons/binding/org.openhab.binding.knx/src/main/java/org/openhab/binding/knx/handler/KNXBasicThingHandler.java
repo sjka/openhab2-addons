@@ -81,10 +81,8 @@ public class KNXBasicThingHandler extends BaseThingHandler implements Individual
 
     ScheduledExecutorService knxScheduler;
 
-    private static final long POLLING_INTERVAL = 60000;
     private static final long OPERATION_TIMEOUT = 5000;
     private static final long OPERATION_INTERVAL = 2000;
-    private static final Random RANDOM_GENERATOR = new Random();
     private boolean filledDescription = false;
 
     // Memory addresses for device information
@@ -124,13 +122,13 @@ public class KNXBasicThingHandler extends BaseThingHandler implements Individual
             if (StringUtils.isNotBlank((String) getConfig().get(ADDRESS))) {
                 address = new IndividualAddress((String) getConfig().get(ADDRESS));
 
-                double factor = (RANDOM_GENERATOR.nextFloat() * 2 - 1);
-                long pollingInterval = Math.round(POLLING_INTERVAL * (1 + 0.25 * factor));
+                long pollingInterval = ((BigDecimal) getConfig().get(INTERVAL)).longValue();
+                long initialDelay = Math.round(pollingInterval * new Random().nextFloat());
 
                 if ((pollingJob == null || pollingJob.isCancelled())) {
-                    logger.trace("'{}' will be polled every {} ms", getThing().getUID(), pollingInterval);
-                    pollingJob = knxScheduler.scheduleWithFixedDelay(() -> pollDeviceStatus(), pollingInterval / 4,
-                            pollingInterval, TimeUnit.MILLISECONDS);
+                    logger.debug("'{}' will be polled every {}s", getThing().getUID(), pollingInterval);
+                    pollingJob = knxScheduler.scheduleWithFixedDelay(() -> pollDeviceStatus(), initialDelay,
+                            pollingInterval, TimeUnit.SECONDS);
                 }
             } else {
                 updateStatus(ThingStatus.ONLINE);
