@@ -55,15 +55,15 @@ import tuwien.auto.calimero.exception.KNXFormatException;
 import tuwien.auto.calimero.mgmt.PropertyAccess.PID;
 
 /**
- * The {@link KNXGenericThingHandler} is responsible for handling commands, which are
+ * The {@link KNXBasicThingHandler} is responsible for handling commands, which are
  * sent to one of the channels.
  *
  * @author Karel Goderis - Initial contribution
  */
-public class KNXGenericThingHandler extends BaseThingHandler
+public class KNXBasicThingHandler extends BaseThingHandler
         implements IndividualAddressListener, GroupAddressListener {
 
-    private final Logger logger = LoggerFactory.getLogger(KNXGenericThingHandler.class);
+    private final Logger logger = LoggerFactory.getLogger(KNXBasicThingHandler.class);
 
     protected ItemChannelLinkRegistry itemChannelLinkRegistry;
 
@@ -111,7 +111,7 @@ public class KNXGenericThingHandler extends BaseThingHandler
     // Property IDs for device information;
     private static final int HARDWARE_TYPE = 78;
 
-    public KNXGenericThingHandler(Thing thing, ItemChannelLinkRegistry registry) {
+    public KNXBasicThingHandler(Thing thing, ItemChannelLinkRegistry registry) {
         super(thing);
         this.itemChannelLinkRegistry = registry;
     }

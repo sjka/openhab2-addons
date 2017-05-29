@@ -26,7 +26,7 @@ import tuwien.auto.calimero.link.medium.TPSettings;
 /**
  * The {@link IPBridgeThingHandler} is responsible for handling commands, which are
  * sent to one of the channels. It implements a KNX Serial/USB Gateway, that either acts a a
- * conduit for other {@link KNXGenericThingHandler}s, or for Channels that are
+ * conduit for other {@link KNXBasicThingHandler}s, or for Channels that are
  * directly defined on the bridge
  *
  * @author Karel Goderis - Initial contribution

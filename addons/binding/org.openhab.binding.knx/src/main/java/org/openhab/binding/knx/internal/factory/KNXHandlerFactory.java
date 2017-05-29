@@ -29,7 +29,7 @@ import org.eclipse.smarthome.core.thing.type.ThingTypeRegistry;
 import org.openhab.binding.knx.KNXTypeMapper;
 import org.openhab.binding.knx.handler.IPBridgeThingHandler;
 import org.openhab.binding.knx.handler.KNXBridgeBaseThingHandler;
-import org.openhab.binding.knx.handler.KNXGenericThingHandler;
+import org.openhab.binding.knx.handler.KNXBasicThingHandler;
 import org.openhab.binding.knx.handler.SerialBridgeThingHandler;
 
 import com.google.common.collect.Lists;
@@ -119,7 +119,7 @@ public class KNXHandlerFactory extends BaseThingHandlerFactory {
         } else if (thing.getThingTypeUID().equals(THING_TYPE_SERIAL_BRIDGE)) {
             return new SerialBridgeThingHandler((Bridge) thing);
         } else if (thing.getThingTypeUID().equals(THING_TYPE_BASIC)) {
-            return new KNXGenericThingHandler(thing, itemChannelLinkRegistry);
+            return new KNXBasicThingHandler(thing, itemChannelLinkRegistry);
         }
         return null;
     }
