@@ -23,7 +23,7 @@
 			<parameter name="fetch" type="boolean">
                 <label>Fetch</label>
                 <description>Read out the device parameters and address/communication object tables</description>
-                <required>false</required>
+                <required>true</required>
                 <default>false</default>
             </parameter>
 		</config-description>
