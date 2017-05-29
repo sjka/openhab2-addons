@@ -89,7 +89,7 @@ public class KNXChannelType {
         return getAddresses(configuration, getUpdateAddressKeys(type));
     }
 
-    protected final <T> Set<T> asSet(T... values) {
+    protected final Set<String> asSet(String... values) {
         return Sets.newHashSet(values);
     }
 
