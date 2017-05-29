@@ -60,8 +60,7 @@ import tuwien.auto.calimero.mgmt.PropertyAccess.PID;
  *
  * @author Karel Goderis - Initial contribution
  */
-public class KNXBasicThingHandler extends BaseThingHandler
-        implements IndividualAddressListener, GroupAddressListener {
+public class KNXBasicThingHandler extends BaseThingHandler implements IndividualAddressListener, GroupAddressListener {
 
     private final Logger logger = LoggerFactory.getLogger(KNXBasicThingHandler.class);
 
@@ -118,10 +117,9 @@ public class KNXBasicThingHandler extends BaseThingHandler
 
     @Override
     public void initialize() {
+        initializeGroupAddresses();
 
         knxScheduler = getBridgeHandler().getScheduler();
-        logger.trace("Setting the scheduler for {} to {}", getThing().getUID(), knxScheduler.toString());
-
         try {
             if (StringUtils.isNotBlank((String) getConfig().get(ADDRESS))) {
                 address = new IndividualAddress((String) getConfig().get(ADDRESS));
@@ -143,16 +141,17 @@ public class KNXBasicThingHandler extends BaseThingHandler
             updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_ERROR, e.getLocalizedMessage());
         }
 
+        getBridgeHandler().registerGroupAddressListener(this);
+        scheduleReadJobs();
+    }
+
+    private void initializeGroupAddresses() {
         forAllChannels((selector, channelConfiguration) -> {
             groupAddresses.addAll(selector.getReadAddresses(channelConfiguration));
             groupAddresses.addAll(selector.getWriteAddresses(channelConfiguration, null));
             groupAddresses.addAll(selector.getTransmitAddresses(channelConfiguration, null));
             groupAddresses.addAll(selector.getUpdateAddresses(channelConfiguration, null));
         });
-
-        getBridgeHandler().registerGroupAddressListener(this);
-
-        scheduleReadJobs();
     }
 
     private KNXChannelType getKNXChannelType(Channel channel) {
