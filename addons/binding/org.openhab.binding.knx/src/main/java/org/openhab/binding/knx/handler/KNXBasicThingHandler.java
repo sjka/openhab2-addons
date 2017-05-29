@@ -37,6 +37,7 @@ import org.openhab.binding.knx.GroupAddressListener;
 import org.openhab.binding.knx.IndividualAddressListener;
 import org.openhab.binding.knx.internal.channel.KNXChannelSelector;
 import org.openhab.binding.knx.internal.channel.KNXChannelType;
+import org.openhab.binding.knx.internal.handler.BasicConfig;
 import org.openhab.binding.knx.internal.handler.Firmware;
 import org.openhab.binding.knx.internal.handler.Manufacturer;
 import org.slf4j.Logger;
@@ -75,8 +76,8 @@ public class KNXBasicThingHandler extends BaseThingHandler implements Individual
     private Map<GroupAddress, ScheduledFuture<?>> readFutures = new HashMap<>();
     private ScheduledFuture<?> pollingJob;
     private ScheduledFuture<?> descriptionJob;
-
-    ScheduledExecutorService knxScheduler;
+    private ScheduledExecutorService knxScheduler;
+    private BasicConfig config;
 
     private static final long OPERATION_TIMEOUT = 5000;
     private static final long OPERATION_INTERVAL = 2000;
@@ -111,14 +112,16 @@ public class KNXBasicThingHandler extends BaseThingHandler implements Individual
 
     @Override
     public void initialize() {
+        config = getConfigAs(BasicConfig.class);
+
         initializeGroupAddresses();
 
         knxScheduler = getBridgeHandler().getScheduler();
         try {
-            if (StringUtils.isNotBlank((String) getConfig().get(ADDRESS))) {
-                address = new IndividualAddress((String) getConfig().get(ADDRESS));
+            if (StringUtils.isNotBlank(config.getAddress())) {
+                address = new IndividualAddress(config.getAddress());
 
-                long pollingInterval = ((BigDecimal) getConfig().get(INTERVAL)).longValue();
+                long pollingInterval = config.getInterval().longValue();
                 long initialDelay = Math.round(pollingInterval * new Random().nextFloat());
 
                 if ((pollingJob == null || pollingJob.isCancelled())) {
@@ -130,8 +133,11 @@ public class KNXBasicThingHandler extends BaseThingHandler implements Individual
                 updateStatus(ThingStatus.ONLINE);
             }
         } catch (KNXFormatException e) {
-            logger.error("An exception occurred while setting the individual address '{}' : '{}'",
-                    getConfig().get(ADDRESS), e.getMessage(), e);
+            logger.error("An exception occurred while setting the individual address '{}': {}", config.getAddress(),
+                    e.getMessage());
+            if (logger.isDebugEnabled()) {
+                logger.error("", e);
+            }
             updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_ERROR, e.getLocalizedMessage());
         }
 
@@ -496,7 +502,7 @@ public class KNXBasicThingHandler extends BaseThingHandler implements Individual
                 boolean isReachable = getBridgeHandler().isReachable(address);
                 if (isReachable) {
                     updateStatus(ThingStatus.ONLINE);
-                    if (!filledDescription && ((Boolean) getConfig().get(FETCH))) {
+                    if (!filledDescription && config.getFetch()) {
                         if (descriptionJob == null || descriptionJob.isCancelled()) {
                             descriptionJob = knxScheduler.schedule(descriptionRunnable, 0, TimeUnit.MILLISECONDS);
                         }
