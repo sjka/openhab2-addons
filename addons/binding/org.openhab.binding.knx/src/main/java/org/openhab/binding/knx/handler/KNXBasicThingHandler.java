@@ -9,6 +9,7 @@
 package org.openhab.binding.knx.handler;
 
 import static org.openhab.binding.knx.KNXBindingConstants.*;
+import static org.openhab.binding.knx.internal.handler.DeviceConstants.*;
 
 import java.math.BigDecimal;
 import java.util.HashMap;
@@ -82,29 +83,6 @@ public class KNXBasicThingHandler extends BaseThingHandler implements Individual
     private static final long OPERATION_TIMEOUT = 5000;
     private static final long OPERATION_INTERVAL = 2000;
     private boolean filledDescription = false;
-
-    // Memory addresses for device information
-    static final int MEM_DOA = 0x0102; // length 2
-    static final int MEM_MANUFACTURERID = 0x0104;
-    static final int MEM_DEVICETYPE = 0x0105; // length 2
-    static final int MEM_VERSION = 0x0107;
-    static final int MEM_PEI = 0x0109;
-    static final int MEM_RUNERROR = 0x010d;
-    static final int MEM_GROUPOBJECTABLEPTR = 0x0112;
-    static final int MEM_PROGRAMPTR = 0x0114;
-    static final int MEM_GROUPADDRESSTABLE = 0x0116; // max. length 233
-
-    // Interface Object indexes
-    private static final int DEVICE_OBJECT = 0; // Device Object
-    private static final int ADDRESS_TABLE_OBJECT = 1; // Addresstable Object
-    // private static final int ASSOCIATION_TABLE_OBJECT = 2; // Associationtable Object
-    // private static final int APPLICATION_PROGRAM_TABLE = 3; // Application Program Object
-    // private static final int INTERFACE_PROGRAM_OBJECT = 4; // Interface Program Object
-    private static final int GROUPOBJECT_OBJECT = 9; // Group Object Object
-    // private static final int KNXNET_IP_OBJECT = 11; // KNXnet/IP Parameter Object
-
-    // Property IDs for device information;
-    private static final int HARDWARE_TYPE = 78;
 
     public KNXBasicThingHandler(Thing thing) {
         super(thing);
@@ -280,7 +258,7 @@ public class KNXBasicThingHandler extends BaseThingHandler implements Individual
             knxScheduler.schedule(new ReadRunnable(groupAddress, dpt), 0, TimeUnit.SECONDS);
         }
 
-        if (recurring) {
+        if (recurring && readInterval != null) {
             ScheduledFuture<?> future = readFutures.get(groupAddress);
             if (future == null || future.isDone() || future.isCancelled()) {
                 int initialDelay = immediate ? 0 : readInterval.intValue();
