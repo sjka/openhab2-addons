@@ -97,6 +97,10 @@ public class KNXChannelType {
         return type;
     }
 
+    public boolean isSlave() {
+        return false;
+    }
+
     @Override
     public String toString() {
         return channelTypeID;

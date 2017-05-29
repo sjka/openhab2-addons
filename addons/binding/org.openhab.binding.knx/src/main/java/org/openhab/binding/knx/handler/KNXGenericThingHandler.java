@@ -541,7 +541,8 @@ public class KNXGenericThingHandler extends BaseThingHandler
                         logger.trace("Thing {} processes a Group Write telegram for destination '{}' for channel '{}'",
                                 getThing().getUID(), destination, channel.getUID());
                         processDataReceived(bridge, destination, asdu,
-                                selector.getDPT(destination, channelConfiguration), channel.getUID());
+                                selector.getDPT(destination, channelConfiguration), channel.getUID(),
+                                selector.isSlave());
                     }
 
                 } catch (KNXFormatException e) {
@@ -552,7 +553,7 @@ public class KNXGenericThingHandler extends BaseThingHandler
     }
 
     private void processDataReceived(KNXBridgeBaseThingHandler bridge, GroupAddress destination, byte[] asdu,
-            String dpt, ChannelUID channelUID) {
+            String dpt, ChannelUID channelUID, boolean slave) {
 
         if (dpt != null) {
 
@@ -579,11 +580,16 @@ public class KNXGenericThingHandler extends BaseThingHandler
                         }
                     }
                 }
-                if (type instanceof State) {
-                    updateState(channelUID, (State) type);
+                if (slave) {
+                    if (type instanceof Command) {
+                        postCommand(channelUID, (Command) type);
+                    }
                 } else {
-                    postCommand(channelUID, (Command) type);
+                    if (type instanceof State) {
+                        updateState(channelUID, (State) type);
+                    }
                 }
+
             } else {
                 final char[] hexCode = "0123456789ABCDEF".toCharArray();
                 StringBuilder sb = new StringBuilder(2 + asdu.length * 2);

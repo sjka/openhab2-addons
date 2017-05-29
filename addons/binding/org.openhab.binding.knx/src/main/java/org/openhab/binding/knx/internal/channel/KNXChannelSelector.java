@@ -29,6 +29,7 @@ public final class KNXChannelSelector {
             add(new TypeSetpoint());
             add(new TypeStatusSwitch());
             add(new TypeSwitch());
+            add(new TypeWallButton());
 
             add(new TypeDateTime());
             add(new TypeNumber());

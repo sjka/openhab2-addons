@@ -40,6 +40,7 @@ public class KNXBindingConstants {
     public static final String CHANNEL_STATUSSWITCH = "statusswitch";
     public static final String CHANNEL_SWITCH = "switch";
     public static final String CHANNEL_GENERIC = "generic";
+    public static final String CHANNEL_WALLBUTTON = "wallbutton";
     public static final String ERRORS_INTERVAL = "errors5min";
     public static final String ERRORS_STARTUP = "errorsall";
 
