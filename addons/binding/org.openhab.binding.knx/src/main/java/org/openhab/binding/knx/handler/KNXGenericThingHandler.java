@@ -48,6 +48,7 @@ import tuwien.auto.calimero.GroupAddress;
 import tuwien.auto.calimero.IndividualAddress;
 import tuwien.auto.calimero.datapoint.CommandDP;
 import tuwien.auto.calimero.datapoint.Datapoint;
+import tuwien.auto.calimero.exception.KNXException;
 import tuwien.auto.calimero.exception.KNXFormatException;
 import tuwien.auto.calimero.mgmt.PropertyAccess.PID;
 
@@ -145,10 +146,8 @@ public class KNXGenericThingHandler extends BaseThingHandler
 
         for (Channel channel : getThing().getChannels()) {
             Configuration channelConfiguration = channel.getConfiguration();
-
-            KNXChannelSelector selector = KNXChannelSelector
-                    .getValueSelectorFromChannelTypeId(channel.getChannelTypeUID().getId());
-
+            String channelID = channel.getChannelTypeUID().getId();
+            KNXChannelSelector selector = KNXChannelSelector.getValueSelectorFromChannelTypeId(channelID);
             if (selector != null) {
                 try {
                     groupAddresses
@@ -161,8 +160,11 @@ public class KNXGenericThingHandler extends BaseThingHandler
                             .addAll(knxChannelSelectorProxy.getUpdateAddresses(selector, channelConfiguration, null));
                 } catch (KNXFormatException e) {
                     logger.error(
-                            "An exception occurred while adding a group address to the addresses to be listened to : '{}'",
-                            e.getMessage(), e);
+                            "An error occurred while adding the group addresses to be listened to on channel {}: {}",
+                            channel.getUID(), e.getMessage());
+                    if (logger.isDebugEnabled()) {
+                        logger.error("", e);
+                    }
                 }
             } else {
                 logger.error("The Channel Type {} is not implemented", channel.getChannelTypeUID().getId());
@@ -676,9 +678,13 @@ public class KNXGenericThingHandler extends BaseThingHandler
                     updateStatus(ThingStatus.OFFLINE);
                 }
             }
-        } catch (Exception e) {
-            logger.error("An exception occurred while testing the reachability of a Thing '{}' : {}",
-                    getThing().getUID(), e);
+        } catch (KNXException e) {
+            logger.error("An error occurred while testing the reachability of a thing '{}' : {}", getThing().getUID(),
+                    e.getLocalizedMessage());
+            if (logger.isDebugEnabled()) {
+                logger.error("", e);
+            }
+            updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR, e.getLocalizedMessage());
         }
     }
 

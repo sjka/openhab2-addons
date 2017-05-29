@@ -545,13 +545,13 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
         return getType(datapoint, asdu);
     }
 
-    public final synchronized boolean isReachable(IndividualAddress address) {
+    public final synchronized boolean isReachable(IndividualAddress address) throws KNXException {
         if (managementProcedures == null || address == null) {
             return false;
         }
         try {
             return managementProcedures.isAddressOccupied(address);
-        } catch (KNXException | InterruptedException e) {
+        } catch (InterruptedException e) {
             logger.error("Could not reach address '{}': {}", address.toString(), e.getMessage());
             if (logger.isDebugEnabled()) {
                 logger.error("", e);
