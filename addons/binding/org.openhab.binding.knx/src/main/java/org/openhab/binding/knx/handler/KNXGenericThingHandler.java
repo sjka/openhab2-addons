@@ -142,27 +142,12 @@ public class KNXGenericThingHandler extends BaseThingHandler
             updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_ERROR, e.getLocalizedMessage());
         }
 
-        for (Channel channel : getThing().getChannels()) {
-            Configuration channelConfiguration = channel.getConfiguration();
-            KNXChannelType selector = getKNXChannelType(channel);
-            if (selector != null) {
-                try {
-                    groupAddresses.addAll(selector.getReadAddresses(channelConfiguration));
-                    groupAddresses.addAll(selector.getWriteAddresses(channelConfiguration, null));
-                    groupAddresses.addAll(selector.getTransmitAddresses(channelConfiguration, null));
-                    groupAddresses.addAll(selector.getUpdateAddresses(channelConfiguration, null));
-                } catch (KNXFormatException e) {
-                    logger.error(
-                            "An error occurred while adding the group addresses to be listened to on channel {}: {}",
-                            channel.getUID(), e.getMessage());
-                    if (logger.isDebugEnabled()) {
-                        logger.error("", e);
-                    }
-                }
-            } else {
-                logger.error("The Channel Type {} is not implemented", channel.getChannelTypeUID().getId());
-            }
-        }
+        forAllChannels((selector, channelConfiguration) -> {
+            groupAddresses.addAll(selector.getReadAddresses(channelConfiguration));
+            groupAddresses.addAll(selector.getWriteAddresses(channelConfiguration, null));
+            groupAddresses.addAll(selector.getTransmitAddresses(channelConfiguration, null));
+            groupAddresses.addAll(selector.getUpdateAddresses(channelConfiguration, null));
+        });
 
         getBridgeHandler().registerGroupAddressListener(this);
 
@@ -209,56 +194,74 @@ public class KNXGenericThingHandler extends BaseThingHandler
         }
     }
 
+    @FunctionalInterface
+    private interface ChannelFunction {
+        void apply(KNXChannelType channelType, Configuration configuration) throws KNXException;
+    }
+
+    private void withKNXType(ChannelUID channelUID, ChannelFunction function) {
+        withKNXType(channelUID.getId(), function);
+    }
+
+    private void withKNXType(String channelId, ChannelFunction function) {
+        Channel channel = getThing().getChannel(channelId);
+        if (channel == null) {
+            logger.warn("Channel '{}' does not exist on thing '{}'", channelId, getThing().getUID());
+            return;
+        }
+        withKNXType(channel, function);
+    }
+
+    private void withKNXType(Channel channel, ChannelFunction function) {
+        try {
+            KNXChannelType selector = getKNXChannelType(channel);
+            if (selector != null) {
+                Configuration channelConfiguration = channel.getConfiguration();
+                if (channelConfiguration != null) {
+                    function.apply(selector, channelConfiguration);
+                } else {
+                    logger.warn("The configuration of channel {} is empty", channel.getUID());
+                }
+            } else {
+                logger.warn("The KNX channel type {} is not implemented", channel.getChannelTypeUID().getId());
+            }
+        } catch (KNXException e) {
+            logger.error("An error occurred on channel {}: {}", channel.getUID(), e.getMessage());
+            if (logger.isDebugEnabled()) {
+                logger.error("", e);
+            }
+        }
+    }
+
+    private void forAllChannels(ChannelFunction function) {
+        for (Channel channel : getThing().getChannels()) {
+            withKNXType(channel, function);
+        }
+    }
+
     @Override
     public void channelLinked(ChannelUID channelUID) {
-
-        Configuration channelConfiguration = getThing().getChannel(channelUID.getId()).getConfiguration();
-        Boolean mustRead = (Boolean) channelConfiguration.get(READ);
-        BigDecimal readInterval = (BigDecimal) channelConfiguration.get(INTERVAL);
-
-        KNXChannelType selector = KNXChannelSelector.getValueSelectorFromChannelTypeId(
-                getThing().getChannel(channelUID.getId()).getChannelTypeUID().getId());
-
-        if (selector != null) {
-            try {
-                for (GroupAddress address : selector.getReadAddresses(channelConfiguration)) {
-                    if (mustRead || readInterval.intValue() > 0) {
-                        scheduleReadJob(address, selector.getDPT(address, channelConfiguration), true, BigDecimal.ZERO);
-                    }
+        withKNXType(channelUID, (selector, configuration) -> {
+            Boolean mustRead = (Boolean) configuration.get(READ);
+            BigDecimal readInterval = (BigDecimal) configuration.get(INTERVAL);
+            for (GroupAddress address : selector.getReadAddresses(configuration)) {
+                if (mustRead || readInterval.intValue() > 0) {
+                    scheduleReadJob(address, selector.getDPT(address, configuration), true, BigDecimal.ZERO);
                 }
-            } catch (KNXFormatException e) {
-                logger.error("An exception occurred while scheduling a read job : '{}'", e.getMessage(), e);
             }
-        } else {
-            logger.error("The Channel Type {} is not implemented",
-                    getThing().getChannel(channelUID.getId()).getChannelTypeUID().getId());
-        }
+        });
     }
 
     private void scheduleReadJobs() {
         cancelReadFutures();
 
-        for (Channel channel : getThing().getChannels()) {
-            Configuration channelConfiguration = channel.getConfiguration();
+        forAllChannels((selector, channelConfiguration) -> {
             Boolean mustRead = (Boolean) channelConfiguration.get(READ);
             BigDecimal readInterval = (BigDecimal) channelConfiguration.get(INTERVAL);
-
-            KNXChannelType selector = getKNXChannelType(channel);
-
-            if (selector != null) {
-                try {
-                    for (GroupAddress address : selector.getReadAddresses(channelConfiguration)) {
-
-                        scheduleReadJob(address, selector.getDPT(address, channelConfiguration), mustRead,
-                                readInterval);
-                    }
-                } catch (KNXFormatException e) {
-                    logger.error("An exception occurred while scheduling a read job : '{}'", e.getMessage(), e);
-                }
-            } else {
-                logger.warn("The Channel Type {} is not implemented", channel.getChannelTypeUID().getId());
+            for (GroupAddress address : selector.getReadAddresses(channelConfiguration)) {
+                scheduleReadJob(address, selector.getDPT(address, channelConfiguration), mustRead, readInterval);
             }
-        }
+        });
     }
 
     private void scheduleReadJob(GroupAddress groupAddress, String dpt, boolean mustRead, BigDecimal readInterval) {
@@ -348,47 +351,21 @@ public class KNXGenericThingHandler extends BaseThingHandler
                 break;
             }
             default: {
-                Channel theChannel = getThing().getChannel(channelUID.getId());
-                if (theChannel != null) {
-                    KNXChannelType selector = KNXChannelSelector
-                            .getValueSelectorFromChannelTypeId(theChannel.getChannelTypeUID().getId());
-
-                    if (selector != null) {
-                        try {
-                            Configuration channelConfiguration = getThing().getChannel(channelUID.getId())
-                                    .getConfiguration();
-
-                            if (channelConfiguration != null) {
-                                Type convertedType = selector.convertType(channelConfiguration, newState);
-                                logger.trace("State to Channel {} {} {} {}/{} : {} -> {}", channelUID.getId(),
-                                        getThing().getChannel(channelUID.getId()).getConfiguration().get(DPT),
-                                        getThing().getChannel(channelUID.getId()).getAcceptedItemType(),
-                                        getThing().getChannel(channelUID.getId()).getConfiguration().get(READ),
-                                        getThing().getChannel(channelUID.getId()).getConfiguration().get(WRITE),
-                                        newState, convertedType);
-                                if (convertedType != null) {
-                                    for (GroupAddress address : selector.getWriteAddresses(channelConfiguration,
-                                            convertedType)) {
-                                        getBridgeHandler().writeToKNX(address,
-                                                selector.getDPT(address, channelConfiguration), convertedType);
-                                    }
-                                }
-                            } else {
-                                logger.warn("The configuration of Channel '{}' is empty", channelUID.getId());
-                            }
-
-                        } catch (KNXFormatException e) {
-                            logger.error("An exception occurred while writing to the KNX bus : '{}'", e.getMessage(),
-                                    e);
+                withKNXType(channelUID, (selector, channelConfiguration) -> {
+                    Type convertedType = selector.convertType(channelConfiguration, newState);
+                    logger.trace("State to Channel {} {} {} {}/{} : {} -> {}", channelUID.getId(),
+                            getThing().getChannel(channelUID.getId()).getConfiguration().get(DPT),
+                            getThing().getChannel(channelUID.getId()).getAcceptedItemType(),
+                            getThing().getChannel(channelUID.getId()).getConfiguration().get(READ),
+                            getThing().getChannel(channelUID.getId()).getConfiguration().get(WRITE), newState,
+                            convertedType);
+                    if (convertedType != null) {
+                        for (GroupAddress address : selector.getWriteAddresses(channelConfiguration, convertedType)) {
+                            getBridgeHandler().writeToKNX(address, selector.getDPT(address, channelConfiguration),
+                                    convertedType);
                         }
-                    } else {
-                        logger.error("The Channel Type {} is not implemented",
-                                getThing().getChannel(channelUID.getId()).getChannelTypeUID().getId());
                     }
-                } else {
-                    logger.warn("The Channel with UID '{}' does not exist on Thing '{}'", channelUID.getId(),
-                            getThing().getUID());
-                }
+                });
                 break;
             }
         }
@@ -418,35 +395,11 @@ public class KNXGenericThingHandler extends BaseThingHandler
 
             logger.debug("Refreshing channel {}", channelUID);
 
-            Channel theChannel = getThing().getChannel(channelUID.getId());
-            if (theChannel != null) {
-                KNXChannelType selector = KNXChannelSelector
-                        .getValueSelectorFromChannelTypeId(theChannel.getChannelTypeUID().getId());
-
-                if (selector != null) {
-                    try {
-                        Configuration channelConfiguration = getThing().getChannel(channelUID.getId())
-                                .getConfiguration();
-
-                        if (channelConfiguration != null) {
-                            for (GroupAddress address : selector.getReadAddresses(channelConfiguration)) {
-                                scheduleReadJob(address, selector.getDPT(address, channelConfiguration), true,
-                                        BigDecimal.ZERO);
-                            }
-                        } else {
-                            logger.warn("The configuration of channel '{}' is empty", channelUID.getId());
-                        }
-                    } catch (KNXFormatException e) {
-                        logger.error("An exception occurred while writing to the KNX bus : '{}'", e.getMessage(), e);
-                    }
-                } else {
-                    logger.error("The Channel Type {} is not implemented",
-                            getThing().getChannel(channelUID.getId()).getChannelTypeUID().getId());
+            withKNXType(channelUID, (selector, channelConfiguration) -> {
+                for (GroupAddress address : selector.getReadAddresses(channelConfiguration)) {
+                    scheduleReadJob(address, selector.getDPT(address, channelConfiguration), true, BigDecimal.ZERO);
                 }
-            } else {
-                logger.warn("The Channel with UID '{}' does not exist on Thing '{}'", channelUID.getId(),
-                        getThing().getUID());
-            }
+            });
         } else {
             switch (channelUID.getId()) {
                 case CHANNEL_RESET: {
@@ -456,51 +409,25 @@ public class KNXGenericThingHandler extends BaseThingHandler
                     break;
                 }
                 default: {
+                    withKNXType(channelUID, (selector, channelConfiguration) -> {
+                        Type convertedType = selector.convertType(channelConfiguration, command);
 
-                    Channel theChannel = getThing().getChannel(channelUID.getId());
-                    if (theChannel != null) {
+                        logger.trace("Command to Channel {} {} {} {}/{} : {} -> {}", channelUID.getId(),
+                                getThing().getChannel(channelUID.getId()).getConfiguration().get(DPT),
+                                getThing().getChannel(channelUID.getId()).getAcceptedItemType(),
+                                getThing().getChannel(channelUID.getId()).getConfiguration().get(READ),
+                                getThing().getChannel(channelUID.getId()).getConfiguration().get(WRITE), command,
+                                convertedType);
 
-                        KNXChannelType selector = KNXChannelSelector
-                                .getValueSelectorFromChannelTypeId(theChannel.getChannelTypeUID().getId());
-
-                        if (selector != null) {
-                            try {
-                                Configuration channelConfiguration = getThing().getChannel(channelUID.getId())
-                                        .getConfiguration();
-
-                                if (channelConfiguration != null) {
-                                    Type convertedType = selector.convertType(channelConfiguration, command);
-
-                                    logger.trace("Command to Channel {} {} {} {}/{} : {} -> {}", channelUID.getId(),
-                                            getThing().getChannel(channelUID.getId()).getConfiguration().get(DPT),
-                                            getThing().getChannel(channelUID.getId()).getAcceptedItemType(),
-                                            getThing().getChannel(channelUID.getId()).getConfiguration().get(READ),
-                                            getThing().getChannel(channelUID.getId()).getConfiguration().get(WRITE),
-                                            command, convertedType);
-
-                                    if (convertedType != null) {
-                                        for (GroupAddress address : selector.getWriteAddresses(channelConfiguration,
-                                                convertedType)) {
-                                            blockedChannels.add(channelUID);
-                                            getBridgeHandler().writeToKNX(address,
-                                                    selector.getDPT(address, channelConfiguration), convertedType);
-                                        }
-                                    }
-                                } else {
-                                    logger.warn("The configuration of channel '{}' is empty", channelUID.getId());
-                                }
-                            } catch (KNXFormatException e) {
-                                logger.error("An exception occurred while writing to the KNX bus : '{}'",
-                                        e.getMessage(), e);
+                        if (convertedType != null) {
+                            for (GroupAddress address : selector.getWriteAddresses(channelConfiguration,
+                                    convertedType)) {
+                                blockedChannels.add(channelUID);
+                                getBridgeHandler().writeToKNX(address, selector.getDPT(address, channelConfiguration),
+                                        convertedType);
                             }
-                        } else {
-                            logger.warn("The Channel Type {} is not implemented",
-                                    getThing().getChannel(channelUID.getId()).getChannelTypeUID().getId());
                         }
-                    } else {
-                        logger.warn("The Channel with UID '{}' does not exist on Thing '{}'", channelUID.getId(),
-                                getThing().getUID());
-                    }
+                    });
                 }
             }
         }
@@ -528,27 +455,17 @@ public class KNXGenericThingHandler extends BaseThingHandler
                 source, destination);
 
         for (Channel channel : getThing().getChannels()) {
-            KNXChannelType selector = KNXChannelSelector
-                    .getValueSelectorFromChannelTypeId(channel.getChannelTypeUID().getId());
+            withKNXType(channel, (selector, channelConfiguration) -> {
+                Set<GroupAddress> addresses = selector.getReadAddresses(channelConfiguration);
+                addresses.addAll(selector.getTransmitAddresses(channelConfiguration, null));
 
-            if (selector != null) {
-                try {
-                    Configuration channelConfiguration = channel.getConfiguration();
-                    Set<GroupAddress> addresses = selector.getReadAddresses(channelConfiguration);
-                    addresses.addAll(selector.getTransmitAddresses(channelConfiguration, null));
-
-                    if (addresses.contains(destination)) {
-                        logger.trace("Thing {} processes a Group Write telegram for destination '{}' for channel '{}'",
-                                getThing().getUID(), destination, channel.getUID());
-                        processDataReceived(bridge, destination, asdu,
-                                selector.getDPT(destination, channelConfiguration), channel.getUID(),
-                                selector.isSlave());
-                    }
-
-                } catch (KNXFormatException e) {
-                    logger.error("An exception occurred while writing to the KNX bus : '{}'", e.getMessage(), e);
+                if (addresses.contains(destination)) {
+                    logger.trace("Thing {} processes a Group Write telegram for destination '{}' for channel '{}'",
+                            getThing().getUID(), destination, channel.getUID());
+                    processDataReceived(bridge, destination, asdu, selector.getDPT(destination, channelConfiguration),
+                            channel.getUID(), selector.isSlave());
                 }
-            }
+            });
         }
     }
 
