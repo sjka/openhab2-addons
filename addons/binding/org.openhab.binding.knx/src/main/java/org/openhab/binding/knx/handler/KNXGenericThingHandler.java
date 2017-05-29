@@ -137,9 +137,10 @@ public class KNXGenericThingHandler extends BaseThingHandler
             } else {
                 updateStatus(ThingStatus.ONLINE);
             }
-        } catch (Exception e) {
+        } catch (KNXFormatException e) {
             logger.error("An exception occurred while setting the individual address '{}' : '{}'",
                     getConfig().get(ADDRESS), e.getMessage(), e);
+            updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_ERROR, e.getLocalizedMessage());
         }
 
         for (Channel channel : getThing().getChannels()) {
