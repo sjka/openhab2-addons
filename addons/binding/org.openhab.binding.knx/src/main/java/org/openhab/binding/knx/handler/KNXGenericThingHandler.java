@@ -123,7 +123,7 @@ public class KNXGenericThingHandler extends BaseThingHandler
         logger.trace("Setting the scheduler for {} to {}", getThing().getUID(), knxScheduler.toString());
 
         try {
-            if (StringUtils.isNotBlank((String) getConfig().get(ADDRESS)) && ((Boolean) getConfig().get(FETCH))) {
+            if (StringUtils.isNotBlank((String) getConfig().get(ADDRESS))) {
                 address = new IndividualAddress((String) getConfig().get(ADDRESS));
 
                 double factor = (RANDOM_GENERATOR.nextFloat() * 2 - 1);
@@ -667,7 +667,7 @@ public class KNXGenericThingHandler extends BaseThingHandler
                 boolean isReachable = ((KNXBridgeBaseThingHandler) getBridge().getHandler()).isReachable(address);
                 if (isReachable) {
                     updateStatus(ThingStatus.ONLINE);
-                    if (!filledDescription) {
+                    if (!filledDescription && ((Boolean) getConfig().get(FETCH))) {
                         if (descriptionJob == null || descriptionJob.isCancelled()) {
                             descriptionJob = knxScheduler.schedule(descriptionRunnable, 0, TimeUnit.MILLISECONDS);
                         }
