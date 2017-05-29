@@ -265,20 +265,23 @@ public class KNXGenericThingHandler extends BaseThingHandler
         });
     }
 
-    private void scheduleReadJob(GroupAddress groupAddress, String dpt, boolean mustRead, BigDecimal readInterval) {
+    private void scheduleReadJob(GroupAddress groupAddress, String dpt, boolean immediate, BigDecimal readInterval) {
         if (knxScheduler == null) {
             return;
         }
 
-        if (mustRead) {
+        boolean recurring = readInterval != null && readInterval.intValue() > 0;
+
+        if (immediate) {
             knxScheduler.schedule(new ReadRunnable(groupAddress, dpt), 0, TimeUnit.SECONDS);
         }
 
-        if (readInterval != null && readInterval.intValue() > 0) {
+        if (recurring) {
             ScheduledFuture<?> future = readFutures.get(groupAddress);
             if (future == null || future.isDone() || future.isCancelled()) {
-                future = knxScheduler.scheduleWithFixedDelay(new ReadRunnable(groupAddress, dpt),
-                        readInterval.intValue(), readInterval.intValue(), TimeUnit.SECONDS);
+                int initialDelay = immediate ? 0 : readInterval.intValue();
+                future = knxScheduler.scheduleWithFixedDelay(new ReadRunnable(groupAddress, dpt), initialDelay,
+                        readInterval.intValue(), TimeUnit.SECONDS);
                 readFutures.put(groupAddress, future);
             }
         }
