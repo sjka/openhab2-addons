@@ -11,7 +11,6 @@ package org.openhab.binding.knx.handler;
 import static org.openhab.binding.knx.KNXBindingConstants.*;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -65,7 +64,6 @@ public class KNXGenericThingHandler extends BaseThingHandler
     private final Logger logger = LoggerFactory.getLogger(KNXGenericThingHandler.class);
 
     protected ItemChannelLinkRegistry itemChannelLinkRegistry;
-    protected ArrayList<ChannelUID> blockedChannels = new ArrayList<ChannelUID>();
 
     // the physical address of the KNX actor represented by this Thing
     protected IndividualAddress address;
@@ -330,35 +328,6 @@ public class KNXGenericThingHandler extends BaseThingHandler
 
         logger.trace("Handling a State ({}) update for Channel {}", newState, channelUID.getId());
 
-        // There are multiple ways to prevent circular loops between the KNX bus and the OH runtume. The first option is
-        // to include https://github.com/eclipse/smarthome/pull/2881 in the ESH runtime, and configure manually the
-        // desired behavior Item by Item. A second option is to use a trace mechanism that tracks what States and
-        // Commands were received in the near past, and then eliminate those that resemble a duplicae event. The last
-        // option is to make the KNXThingHandlers use the ItemChannelLinkRegistry infrastructure to detect what Items
-        // Channels are bound to, and put Channels that are originating from other KNX Things into a blocked list, and
-        // filter these out when handleCommand and handleUpdate are called.
-        //
-        // The first option was vetoed. The second option does not yield deterministic behavior. The code for the second
-        // option is still included for discussion purposes but is commented out. The default "look-back" interval of
-        // 500ms not adequate, and putting a higher value leads to missed events. The third option is the only one
-        // remaining that provided a behavior similar to the KNX 1.x binding, which in fact only passes on States and
-        // Command to Channels that are bound to the Item and that are not originating from the KNX binding, e.g.
-        // "inter"-binding bridging is allowed, but "intra"-binding bridging is filtered out. The third option is
-
-        // "Second option"
-        // if (((KNXBridgeBaseThingHandler) getBridge().getHandler()).hasEvent(channelUID, newState, 50, 500)) {
-        // return;
-        // } else {
-        // ((KNXBridgeBaseThingHandler) getBridge().getHandler()).logEvent(channelUID, newState);
-        // }
-
-        // "Third option"
-        if (blockedChannels.contains(channelUID)) {
-            logger.trace("Removing channel '{}' from the list of blocked channels", channelUID);
-            blockedChannels.remove(channelUID);
-            return;
-        }
-
         switch (channelUID.getId()) {
             case CHANNEL_RESET: {
                 if (address != null) {
@@ -368,6 +337,9 @@ public class KNXGenericThingHandler extends BaseThingHandler
             }
             default: {
                 withKNXType(channelUID, (selector, channelConfiguration) -> {
+                    if (!selector.isSlave()) {
+                        return;
+                    }
                     Type convertedType = selector.convertType(channelConfiguration, newState);
                     logger.trace("State to Channel {} {} {} {}/{} : {} -> {}", channelUID.getId(),
                             getThing().getChannel(channelUID.getId()).getConfiguration().get(DPT),
@@ -402,11 +374,6 @@ public class KNXGenericThingHandler extends BaseThingHandler
         // ((KNXBridgeBaseThingHandler) getBridge().getHandler()).logEvent(channelUID, command);
         // }
 
-        if (blockedChannels.contains(channelUID)) {
-            logger.trace("Remvoing channel '{}' from the list of blocked channels", channelUID);
-            blockedChannels.remove(channelUID);
-            return;
-        }
         if (command instanceof RefreshType) {
 
             logger.debug("Refreshing channel {}", channelUID);
@@ -426,6 +393,9 @@ public class KNXGenericThingHandler extends BaseThingHandler
                 }
                 default: {
                     withKNXType(channelUID, (selector, channelConfiguration) -> {
+                        if (selector.isSlave()) {
+                            return;
+                        }
                         Type convertedType = selector.convertType(channelConfiguration, command);
 
                         logger.trace("Command to Channel {} {} {} {}/{} : {} -> {}", channelUID.getId(),
@@ -438,7 +408,6 @@ public class KNXGenericThingHandler extends BaseThingHandler
                         if (convertedType != null) {
                             for (GroupAddress address : selector.getWriteAddresses(channelConfiguration,
                                     convertedType)) {
-                                blockedChannels.add(channelUID);
                                 getBridgeHandler().writeToKNX(address, selector.getDPT(address, channelConfiguration),
                                         convertedType);
                             }
@@ -509,7 +478,6 @@ public class KNXGenericThingHandler extends BaseThingHandler
                                 && !aBoundChannel.getAsString().equals(channelUID.getAsString())) {
                             logger.trace("Adding channel '{}' of Item '{}' the list of blocked channels", aBoundChannel,
                                     anItem);
-                            blockedChannels.add(aBoundChannel);
                         }
                     }
                 }
