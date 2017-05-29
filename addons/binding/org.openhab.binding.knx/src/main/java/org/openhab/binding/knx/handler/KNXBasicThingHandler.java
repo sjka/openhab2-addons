@@ -63,6 +63,8 @@ import tuwien.auto.calimero.mgmt.PropertyAccess.PID;
  */
 public class KNXBasicThingHandler extends BaseThingHandler implements IndividualAddressListener, GroupAddressListener {
 
+    private final Random random = new Random();
+
     private final Logger logger = LoggerFactory.getLogger(KNXBasicThingHandler.class);
 
     // the physical address of the KNX actor represented by this Thing
@@ -100,7 +102,7 @@ public class KNXBasicThingHandler extends BaseThingHandler implements Individual
                 address = new IndividualAddress(config.getAddress());
 
                 long pollingInterval = config.getInterval().longValue();
-                long initialDelay = Math.round(pollingInterval * new Random().nextFloat());
+                long initialDelay = Math.round(pollingInterval * random.nextFloat());
 
                 if ((pollingJob == null || pollingJob.isCancelled())) {
                     logger.debug("'{}' will be polled every {}s", getThing().getUID(), pollingInterval);
