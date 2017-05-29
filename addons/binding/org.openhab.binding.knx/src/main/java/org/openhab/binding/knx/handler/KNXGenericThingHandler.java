@@ -471,7 +471,7 @@ public class KNXGenericThingHandler extends BaseThingHandler
 
                 logger.warn(
                         "Ignoring KNX bus data: couldn't transform to an openHAB type (not supported). Destination='{}', datapoint='{}', data='{}'",
-                        new Object[] { destination.toString(), datapoint.toString(), sb.toString() });
+                        destination, datapoint, sb);
                 return;
             }
 
