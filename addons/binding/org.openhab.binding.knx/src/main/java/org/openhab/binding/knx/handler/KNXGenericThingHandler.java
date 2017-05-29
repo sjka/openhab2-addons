@@ -144,7 +144,7 @@ public class KNXGenericThingHandler extends BaseThingHandler
 
         for (Channel channel : getThing().getChannels()) {
             Configuration channelConfiguration = channel.getConfiguration();
-            KNXChannelType selector = extracted(channel);
+            KNXChannelType selector = getKNXChannelType(channel);
             if (selector != null) {
                 try {
                     groupAddresses.addAll(selector.getReadAddresses(channelConfiguration));
@@ -169,7 +169,7 @@ public class KNXGenericThingHandler extends BaseThingHandler
         scheduleReadJobs();
     }
 
-    private KNXChannelType extracted(Channel channel) {
+    private KNXChannelType getKNXChannelType(Channel channel) {
         String channelID = channel.getChannelTypeUID().getId();
         KNXChannelType selector = KNXChannelSelector.getValueSelectorFromChannelTypeId(channelID);
         return selector;
@@ -243,7 +243,7 @@ public class KNXGenericThingHandler extends BaseThingHandler
             Boolean mustRead = (Boolean) channelConfiguration.get(READ);
             BigDecimal readInterval = (BigDecimal) channelConfiguration.get(INTERVAL);
 
-            KNXChannelType selector = extracted(channel);
+            KNXChannelType selector = getKNXChannelType(channel);
 
             if (selector != null) {
                 try {
