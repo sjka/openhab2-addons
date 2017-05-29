@@ -53,7 +53,7 @@
             <parameter name="interval" type="integer">
                 <label>Interval</label>
                 <description>Interval between attempts to read the status group address on the bus, in seconds</description>
-                <required>false</required>
+                <required>true</required>
                 <default>0</default>
             </parameter>
         </config-description>
@@ -85,8 +85,8 @@
             <parameter name="interval" type="integer">
                 <label>Interval</label>
                 <description>Interval between attempts to read the energy group address on the bus, in seconds</description>
-                <required>false</required>
-                 <default>0</default>
+                <required>true</required>
+                <default>0</default>
             </parameter>
         </config-description>
     </channel-type>
@@ -110,7 +110,7 @@
             <parameter name="interval" type="integer">
                 <label>Interval</label>
                 <description>Interval between attempts to read the current group address on the bus, in seconds</description>
-                <required>false</required>
+                <required>true</required>
                 <default>0</default>
             </parameter>
         </config-description>
@@ -135,7 +135,7 @@
             <parameter name="interval" type="integer">
                 <label>Interval</label>
                 <description>Interval between attempts to read the operating hours group address on the bus, in seconds</description>
-                <required>false</required>
+                <required>true</required>
                 <default>0</default>
             </parameter>
         </config-description>
@@ -180,7 +180,7 @@
             <parameter name="interval" type="integer">
                 <label>Interval</label>
                 <description>Interval between attempts to read the status group addresses on the bus, in seconds</description>
-                <required>false</required>
+                <required>true</required>
                 <default>0</default>
             </parameter>
         </config-description>
@@ -230,7 +230,7 @@
             <parameter name="interval" type="integer">
                 <label>Interval</label>
                 <description>Interval between attempts to read the status group addresses on the bus, in seconds</description>
-                <required>false</required>
+                <required>true</required>
                 <default>0</default>
             </parameter>
         </config-description>
@@ -260,7 +260,7 @@
             <parameter name="interval" type="integer">
                 <label>Interval</label>
                 <description>Interval between attempts to read the status group address on the bus, in seconds</description>
-                <required>false</required>
+                <required>true</required>
                 <default>0</default>
             </parameter>
         </config-description>
@@ -290,7 +290,7 @@
             <parameter name="interval" type="integer">
                 <label>Interval</label>
                 <description>Interval between attempts to read the status group address on the bus, in seconds</description>
-                <required>false</required>
+                <required>true</required>
                 <default>0</default>
             </parameter>
         </config-description>
@@ -320,7 +320,7 @@
             <parameter name="interval" type="integer">
                 <label>Interval</label>
                 <description>Interval between attempts to read the status group address on the bus, in seconds</description>
-                <required>false</required>
+                <required>true</required>
                 <default>0</default>
             </parameter>
         </config-description>
@@ -350,7 +350,7 @@
             <parameter name="interval" type="integer">
                 <label>Interval</label>
                 <description>Interval between attempts to read the status group address on the bus, in seconds</description>
-                <required>false</required>
+                <required>true</required>
                 <default>0</default>
             </parameter>
         </config-description>
@@ -380,7 +380,7 @@
             <parameter name="interval" type="integer">
                 <label>Interval</label>
                 <description>Interval between attempts to read the status group address on the bus, in seconds</description>
-                <required>false</required>
+                <required>true</required>
                 <default>0</default>
             </parameter>
         </config-description>
@@ -410,7 +410,7 @@
             <parameter name="interval" type="integer">
                 <label>Interval</label>
                 <description>Interval between attempts to read the status group address on the bus, in seconds</description>
-                <required>false</required>
+                <required>true</required>
                 <default>0</default>
             </parameter>
         </config-description>
