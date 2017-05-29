@@ -321,63 +321,30 @@ public class KNXGenericThingHandler extends BaseThingHandler
 
     @Override
     public void handleUpdate(ChannelUID channelUID, State newState) {
-
         if (getBridgeHandler() == null) {
             logger.warn("KNX bridge handler not found. Cannot handle updates without bridge.");
         }
-
-        logger.trace("Handling a State ({}) update for Channel {}", newState, channelUID.getId());
-
+        logger.trace("Handling a State ({}) update for Channel {}", newState, channelUID);
         switch (channelUID.getId()) {
-            case CHANNEL_RESET: {
+            case CHANNEL_RESET:
                 if (address != null) {
                     restart();
                 }
                 break;
-            }
-            default: {
-                withKNXType(channelUID, (selector, channelConfiguration) -> {
-                    if (!selector.isSlave()) {
-                        return;
-                    }
-                    Type convertedType = selector.convertType(channelConfiguration, newState);
-                    logger.trace("State to Channel {} {} {} {}/{} : {} -> {}", channelUID.getId(),
-                            getThing().getChannel(channelUID.getId()).getConfiguration().get(DPT),
-                            getThing().getChannel(channelUID.getId()).getAcceptedItemType(),
-                            getThing().getChannel(channelUID.getId()).getConfiguration().get(READ),
-                            getThing().getChannel(channelUID.getId()).getConfiguration().get(WRITE), newState,
-                            convertedType);
-                    if (convertedType != null) {
-                        for (GroupAddress address : selector.getWriteAddresses(channelConfiguration, convertedType)) {
-                            getBridgeHandler().writeToKNX(address, selector.getDPT(address, channelConfiguration),
-                                    convertedType);
-                        }
-                    }
-                });
+            default:
+                sendToKNX(channelUID, newState, true);
                 break;
-            }
         }
     }
 
     @Override
     public void handleCommand(ChannelUID channelUID, Command command) {
-
         if (getBridgeHandler() == null) {
             logger.warn("KNX bridge handler not found. Cannot handle commands without bridge.");
         }
-
-        logger.trace("Handling a Command ({})  for Channel {}", command, channelUID.getId());
-
-        // if (((KNXBridgeBaseThingHandler) getBridge().getHandler()).hasEvent(channelUID, command, 50, 500)) {
-        // return;
-        // } else {
-        // ((KNXBridgeBaseThingHandler) getBridge().getHandler()).logEvent(channelUID, command);
-        // }
-
+        logger.trace("Handling a Command ({})  for Channel {}", command, channelUID);
         if (command instanceof RefreshType) {
-
             logger.debug("Refreshing channel {}", channelUID);
-
             withKNXType(channelUID, (selector, channelConfiguration) -> {
                 for (GroupAddress address : selector.getReadAddresses(channelConfiguration)) {
                     scheduleReadJob(address, selector.getDPT(address, channelConfiguration), true, BigDecimal.ZERO);
@@ -385,37 +352,39 @@ public class KNXGenericThingHandler extends BaseThingHandler
             });
         } else {
             switch (channelUID.getId()) {
-                case CHANNEL_RESET: {
+                case CHANNEL_RESET:
                     if (address != null) {
                         restart();
                     }
                     break;
-                }
-                default: {
-                    withKNXType(channelUID, (selector, channelConfiguration) -> {
-                        if (selector.isSlave()) {
-                            return;
-                        }
-                        Type convertedType = selector.convertType(channelConfiguration, command);
-
-                        logger.trace("Command to Channel {} {} {} {}/{} : {} -> {}", channelUID.getId(),
-                                getThing().getChannel(channelUID.getId()).getConfiguration().get(DPT),
-                                getThing().getChannel(channelUID.getId()).getAcceptedItemType(),
-                                getThing().getChannel(channelUID.getId()).getConfiguration().get(READ),
-                                getThing().getChannel(channelUID.getId()).getConfiguration().get(WRITE), command,
-                                convertedType);
-
-                        if (convertedType != null) {
-                            for (GroupAddress address : selector.getWriteAddresses(channelConfiguration,
-                                    convertedType)) {
-                                getBridgeHandler().writeToKNX(address, selector.getDPT(address, channelConfiguration),
-                                        convertedType);
-                            }
-                        }
-                    });
-                }
+                default:
+                    sendToKNX(channelUID, command, false);
+                    break;
             }
         }
+
+    }
+
+    private void sendToKNX(ChannelUID channelUID, Type type, boolean toSlaves) {
+        withKNXType(channelUID, (selector, channelConfiguration) -> {
+            if (selector.isSlave() != toSlaves) {
+                return;
+            }
+            Type convertedType = selector.convertType(channelConfiguration, type);
+            if (logger.isTraceEnabled()) {
+                logger.trace("Sending to channel {} {} {} {}/{} : {} -> {}", channelUID.getId(),
+                        getThing().getChannel(channelUID.getId()).getConfiguration().get(DPT),
+                        getThing().getChannel(channelUID.getId()).getAcceptedItemType(),
+                        getThing().getChannel(channelUID.getId()).getConfiguration().get(READ),
+                        getThing().getChannel(channelUID.getId()).getConfiguration().get(WRITE), type, convertedType);
+            }
+            if (convertedType != null) {
+                for (GroupAddress address : selector.getWriteAddresses(channelConfiguration, convertedType)) {
+                    getBridgeHandler().writeToKNX(address, selector.getDPT(address, channelConfiguration),
+                            convertedType);
+                }
+            }
+        });
     }
 
     @Override
