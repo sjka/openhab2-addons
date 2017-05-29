@@ -18,6 +18,9 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 import org.eclipse.smarthome.core.library.types.DecimalType;
 import org.eclipse.smarthome.core.thing.Bridge;
@@ -100,7 +103,8 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
     // Data structures related to the various jobs
     private ScheduledFuture<?> connectJob;
     private ScheduledFuture<?> busJob;
-    private Boolean connectLock = false;
+    private Lock connectLock = new ReentrantLock();
+    private Condition connectedCondition = connectLock.newCondition();
 
     private ScheduledExecutorService knxScheduler;
 
@@ -203,17 +207,20 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
     }
 
     private void scheduleAndWaitForConnection() {
-        synchronized (connectLock) {
+        connectLock.lock();
+        try {
             while (!(getThing().getStatus() == ThingStatus.ONLINE)) {
                 if (connectJob.isDone()) {
                     scheduleConnectJob();
                 }
                 try {
-                    connectLock.wait();
+                    connectedCondition.await();
                 } catch (InterruptedException e) {
                     // Nothing to do here - we move on
                 }
             }
+        } finally {
+            connectLock.unlock();
         }
     }
 
@@ -335,8 +342,11 @@ public abstract class KNXBridgeBaseThingHandler extends BaseBridgeHandler implem
             disconnect();
         }
 
-        synchronized (connectLock) {
-            connectLock.notifyAll();
+        connectLock.lock();
+        try {
+            connectedCondition.signalAll();
+        } finally {
+            connectLock.unlock();
         }
     }
 
