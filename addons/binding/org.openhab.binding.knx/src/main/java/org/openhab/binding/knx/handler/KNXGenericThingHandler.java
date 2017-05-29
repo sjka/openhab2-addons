@@ -118,7 +118,7 @@ public class KNXGenericThingHandler extends BaseThingHandler
     @Override
     public void initialize() {
 
-        knxScheduler = extracted().getScheduler();
+        knxScheduler = getBridgeHandler().getScheduler();
         logger.trace("Setting the scheduler for {} to {}", getThing().getUID(), knxScheduler.toString());
 
         try {
@@ -165,12 +165,12 @@ public class KNXGenericThingHandler extends BaseThingHandler
             }
         }
 
-        extracted().registerGroupAddressListener(this);
+        getBridgeHandler().registerGroupAddressListener(this);
 
         scheduleReadJobs();
     }
 
-    private KNXBridgeBaseThingHandler extracted() {
+    private KNXBridgeBaseThingHandler getBridgeHandler() {
         return (KNXBridgeBaseThingHandler) getBridge().getHandler();
     }
 
@@ -188,7 +188,7 @@ public class KNXGenericThingHandler extends BaseThingHandler
 
         cancelReadFutures();
 
-        KNXBridgeBaseThingHandler bridgeHandler = extracted();
+        KNXBridgeBaseThingHandler bridgeHandler = getBridgeHandler();
         if (bridgeHandler != null) {
             bridgeHandler.unregisterGroupAddressListener(this);
         }
@@ -231,7 +231,6 @@ public class KNXGenericThingHandler extends BaseThingHandler
     }
 
     private void scheduleReadJobs() {
-
         cancelReadFutures();
 
         for (Channel channel : getThing().getChannels()) {
@@ -239,8 +238,9 @@ public class KNXGenericThingHandler extends BaseThingHandler
             Boolean mustRead = (Boolean) channelConfiguration.get(READ);
             BigDecimal readInterval = (BigDecimal) channelConfiguration.get(INTERVAL);
 
+            String channelID = channel.getChannelTypeUID().getId();
             KNXChannelType selector = KNXChannelSelector
-                    .getValueSelectorFromChannelTypeId(channel.getChannelTypeUID().getId());
+                    .getValueSelectorFromChannelTypeId(channelID);
 
             if (selector != null) {
                 try {
@@ -275,12 +275,12 @@ public class KNXGenericThingHandler extends BaseThingHandler
         super.bridgeStatusChanged(bridgeStatusInfo);
 
         if (bridgeStatusInfo.getStatus() == ThingStatus.ONLINE) {
-            extracted().registerGroupAddressListener(this);
+            getBridgeHandler().registerGroupAddressListener(this);
             scheduleReadJobs();
             updateStatus(ThingStatus.ONLINE, ThingStatusDetail.NONE);
         } else if (bridgeStatusInfo.getStatus() == ThingStatus.OFFLINE) {
             cancelReadFutures();
-            extracted().unregisterGroupAddressListener(this);
+            getBridgeHandler().unregisterGroupAddressListener(this);
             updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.BRIDGE_OFFLINE);
         }
     }
@@ -302,7 +302,7 @@ public class KNXGenericThingHandler extends BaseThingHandler
     @Override
     public void handleUpdate(ChannelUID channelUID, State newState) {
 
-        if (extracted() == null) {
+        if (getBridgeHandler() == null) {
             logger.warn("KNX bridge handler not found. Cannot handle updates without bridge.");
         }
 
@@ -366,7 +366,7 @@ public class KNXGenericThingHandler extends BaseThingHandler
                                 if (convertedType != null) {
                                     for (GroupAddress address : selector.getWriteAddresses(channelConfiguration,
                                             convertedType)) {
-                                        extracted().writeToKNX(address,
+                                        getBridgeHandler().writeToKNX(address,
                                                 selector.getDPT(address, channelConfiguration), convertedType);
                                     }
                                 }
@@ -394,7 +394,7 @@ public class KNXGenericThingHandler extends BaseThingHandler
     @Override
     public void handleCommand(ChannelUID channelUID, Command command) {
 
-        if (extracted() == null) {
+        if (getBridgeHandler() == null) {
             logger.warn("KNX bridge handler not found. Cannot handle commands without bridge.");
         }
 
@@ -479,7 +479,7 @@ public class KNXGenericThingHandler extends BaseThingHandler
                                         for (GroupAddress address : selector.getWriteAddresses(channelConfiguration,
                                                 convertedType)) {
                                             blockedChannels.add(channelUID);
-                                            extracted().writeToKNX(address,
+                                            getBridgeHandler().writeToKNX(address,
                                                     selector.getDPT(address, channelConfiguration), convertedType);
                                         }
                                     }
@@ -601,7 +601,7 @@ public class KNXGenericThingHandler extends BaseThingHandler
 
     public void restart() {
         if (address != null) {
-            extracted().restartNetworkDevice(address);
+            getBridgeHandler().restartNetworkDevice(address);
         }
     }
 
@@ -641,7 +641,7 @@ public class KNXGenericThingHandler extends BaseThingHandler
         try {
             if (address != null && getBridge().getStatus() == ThingStatus.ONLINE) {
                 logger.debug("Polling the individual address {}", address.toString());
-                boolean isReachable = extracted().isReachable(address);
+                boolean isReachable = getBridgeHandler().isReachable(address);
                 if (isReachable) {
                     updateStatus(ThingStatus.ONLINE);
                     if (!filledDescription && ((Boolean) getConfig().get(FETCH))) {
@@ -672,8 +672,7 @@ public class KNXGenericThingHandler extends BaseThingHandler
                     logger.debug("Fetching device information for address {}", address.toString());
 
                     Thread.sleep(OPERATION_INTERVAL);
-                    byte[] data = extracted().readDeviceDescription(address,
-                            0, false, OPERATION_TIMEOUT);
+                    byte[] data = getBridgeHandler().readDeviceDescription(address, 0, false, OPERATION_TIMEOUT);
 
                     if (data != null) {
                         final DD0 dd = DeviceDescriptor.DD0.fromType0(data);
@@ -697,28 +696,24 @@ public class KNXGenericThingHandler extends BaseThingHandler
 
                     // check if there is a Device Object in the KNX Actor
                     Thread.sleep(OPERATION_INTERVAL);
-                    byte[] elements = extracted().readDeviceProperties(
-                            address, DEVICE_OBJECT, PID.OBJECT_TYPE, 0, 1, false, OPERATION_TIMEOUT);
+                    byte[] elements = getBridgeHandler().readDeviceProperties(address, DEVICE_OBJECT, PID.OBJECT_TYPE,
+                            0, 1, false, OPERATION_TIMEOUT);
                     if ((elements == null ? 0 : toUnsigned(elements)) == 1) {
 
                         Thread.sleep(OPERATION_INTERVAL);
-                        String ManufacturerID = Manufacturer.getName(
-                                toUnsigned(extracted().readDeviceProperties(
-                                        address, DEVICE_OBJECT, PID.MANUFACTURER_ID, 1, 1, false, OPERATION_TIMEOUT)));
+                        String ManufacturerID = Manufacturer
+                                .getName(toUnsigned(getBridgeHandler().readDeviceProperties(address, DEVICE_OBJECT,
+                                        PID.MANUFACTURER_ID, 1, 1, false, OPERATION_TIMEOUT)));
                         Thread.sleep(OPERATION_INTERVAL);
-                        String serialNo = DataUnitBuilder.toHex(
-                                extracted().readDeviceProperties(address,
-                                        DEVICE_OBJECT, PID.SERIAL_NUMBER, 1, 1, false, OPERATION_TIMEOUT),
-                                "");
+                        String serialNo = DataUnitBuilder.toHex(getBridgeHandler().readDeviceProperties(address,
+                                DEVICE_OBJECT, PID.SERIAL_NUMBER, 1, 1, false, OPERATION_TIMEOUT), "");
                         Thread.sleep(OPERATION_INTERVAL);
-                        String hardwareType = DataUnitBuilder.toHex(
-                                extracted().readDeviceProperties(address,
-                                        DEVICE_OBJECT, HARDWARE_TYPE, 1, 1, false, OPERATION_TIMEOUT),
-                                " ");
+                        String hardwareType = DataUnitBuilder.toHex(getBridgeHandler().readDeviceProperties(address,
+                                DEVICE_OBJECT, HARDWARE_TYPE, 1, 1, false, OPERATION_TIMEOUT), " ");
                         Thread.sleep(OPERATION_INTERVAL);
-                        String firmwareRevision = Integer.toString(toUnsigned(
-                                extracted().readDeviceProperties(address,
-                                        DEVICE_OBJECT, PID.FIRMWARE_REVISION, 1, 1, false, OPERATION_TIMEOUT)));
+                        String firmwareRevision = Integer
+                                .toString(toUnsigned(getBridgeHandler().readDeviceProperties(address, DEVICE_OBJECT,
+                                        PID.FIRMWARE_REVISION, 1, 1, false, OPERATION_TIMEOUT)));
 
                         Map<String, String> properties = editProperties();
                         properties.put(MANUFACTURER_NAME, ManufacturerID);
@@ -743,13 +738,13 @@ public class KNXGenericThingHandler extends BaseThingHandler
                     // we will just go ahead and try to read them out irrespective of what is in the IO_LIST
 
                     Thread.sleep(OPERATION_INTERVAL);
-                    byte[] tableaddress = extracted().readDeviceProperties(
-                            address, ADDRESS_TABLE_OBJECT, PID.TABLE_REFERENCE, 1, 1, false, OPERATION_TIMEOUT);
+                    byte[] tableaddress = getBridgeHandler().readDeviceProperties(address, ADDRESS_TABLE_OBJECT,
+                            PID.TABLE_REFERENCE, 1, 1, false, OPERATION_TIMEOUT);
 
                     if (tableaddress != null) {
                         Thread.sleep(OPERATION_INTERVAL);
-                        elements = extracted().readDeviceMemory(address,
-                                toUnsigned(tableaddress), 1, false, OPERATION_TIMEOUT);
+                        elements = getBridgeHandler().readDeviceMemory(address, toUnsigned(tableaddress), 1, false,
+                                OPERATION_TIMEOUT);
                         if (elements != null) {
                             int numberOfElements = toUnsigned(elements);
                             logger.debug("The KNX Actor with address {} uses {} group addresses", address,
@@ -758,8 +753,8 @@ public class KNXGenericThingHandler extends BaseThingHandler
                             byte[] addressData = null;
                             while (addressData == null) {
                                 Thread.sleep(OPERATION_INTERVAL);
-                                addressData = extracted().readDeviceMemory(
-                                        address, toUnsigned(tableaddress) + 1, 2, false, OPERATION_TIMEOUT);
+                                addressData = getBridgeHandler().readDeviceMemory(address, toUnsigned(tableaddress) + 1,
+                                        2, false, OPERATION_TIMEOUT);
                                 if (addressData != null) {
                                     IndividualAddress individualAddress = new IndividualAddress(addressData);
                                     logger.debug(
@@ -772,9 +767,8 @@ public class KNXGenericThingHandler extends BaseThingHandler
                                 addressData = null;
                                 while (addressData == null) {
                                     Thread.sleep(OPERATION_INTERVAL);
-                                    addressData = extracted()
-                                            .readDeviceMemory(address, toUnsigned(tableaddress) + 1 + i * 2, 2, false,
-                                                    OPERATION_TIMEOUT);
+                                    addressData = getBridgeHandler().readDeviceMemory(address,
+                                            toUnsigned(tableaddress) + 1 + i * 2, 2, false, OPERATION_TIMEOUT);
                                     if (addressData != null) {
                                         GroupAddress groupAddress = new GroupAddress(addressData);
                                         foundGroupAddresses.add(groupAddress);
@@ -791,14 +785,13 @@ public class KNXGenericThingHandler extends BaseThingHandler
                     }
 
                     Thread.sleep(OPERATION_INTERVAL);
-                    byte[] objecttableaddress = extracted()
-                            .readDeviceProperties(address, GROUPOBJECT_OBJECT, PID.TABLE_REFERENCE, 1, 1, true,
-                                    OPERATION_TIMEOUT);
+                    byte[] objecttableaddress = getBridgeHandler().readDeviceProperties(address, GROUPOBJECT_OBJECT,
+                            PID.TABLE_REFERENCE, 1, 1, true, OPERATION_TIMEOUT);
 
                     if (objecttableaddress != null) {
                         Thread.sleep(OPERATION_INTERVAL);
-                        elements = extracted().readDeviceMemory(address,
-                                toUnsigned(objecttableaddress), 1, false, OPERATION_TIMEOUT);
+                        elements = getBridgeHandler().readDeviceMemory(address, toUnsigned(objecttableaddress), 1,
+                                false, OPERATION_TIMEOUT);
                         if (elements != null) {
                             int numberOfElements = toUnsigned(elements);
                             logger.debug("The KNX Actor with address {} has {} objects", address, numberOfElements);
@@ -807,9 +800,8 @@ public class KNXGenericThingHandler extends BaseThingHandler
                                 byte[] objectData = null;
                                 while (objectData == null) {
                                     Thread.sleep(OPERATION_INTERVAL);
-                                    objectData = extracted()
-                                            .readDeviceMemory(address, toUnsigned(objecttableaddress) + 1 + (i * 3), 3,
-                                                    false, OPERATION_TIMEOUT);
+                                    objectData = getBridgeHandler().readDeviceMemory(address,
+                                            toUnsigned(objecttableaddress) + 1 + (i * 3), 3, false, OPERATION_TIMEOUT);
 
                                     logger.debug("Byte 1 {}",
                                             String.format("%8s", Integer.toBinaryString(objectData[0] & 0xFF))
