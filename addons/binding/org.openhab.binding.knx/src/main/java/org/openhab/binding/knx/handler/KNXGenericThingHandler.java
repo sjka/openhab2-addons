@@ -12,6 +12,7 @@ import static org.openhab.binding.knx.KNXBindingConstants.*;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Random;
@@ -75,7 +76,7 @@ public class KNXGenericThingHandler extends BaseThingHandler
     // group addresses read out from the device's firmware tables
     protected Set<GroupAddress> foundGroupAddresses = new HashSet<GroupAddress>();
 
-    private ArrayList<ScheduledFuture<?>> readFutures = new ArrayList<ScheduledFuture<?>>();
+    private Map<GroupAddress, ScheduledFuture<?>> readFutures = new HashMap<>();
     private ScheduledFuture<?> pollingJob;
     private ScheduledFuture<?> descriptionJob;
 
@@ -186,7 +187,7 @@ public class KNXGenericThingHandler extends BaseThingHandler
 
     private void cancelReadFutures() {
         if (readFutures != null) {
-            for (ScheduledFuture<?> future : readFutures) {
+            for (ScheduledFuture<?> future : readFutures.values()) {
                 if (!future.isDone()) {
                     future.cancel(true);
                 }
@@ -271,8 +272,12 @@ public class KNXGenericThingHandler extends BaseThingHandler
         }
 
         if (readInterval != null && readInterval.intValue() > 0 && knxScheduler != null) {
-            readFutures.add(knxScheduler.scheduleWithFixedDelay(new ReadRunnable(groupAddress, dpt),
-                    readInterval.intValue(), readInterval.intValue(), TimeUnit.SECONDS));
+            ScheduledFuture<?> future = readFutures.get(groupAddress);
+            if (future == null || future.isDone() || future.isCancelled()) {
+                future = knxScheduler.scheduleWithFixedDelay(new ReadRunnable(groupAddress, dpt),
+                        readInterval.intValue(), readInterval.intValue(), TimeUnit.SECONDS);
+                readFutures.put(groupAddress, future);
+            }
         }
     }
 
