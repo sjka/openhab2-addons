@@ -47,7 +47,7 @@
             <parameter name="read" type="boolean">
                 <label>Read</label>
                 <description>Flag to indicate if the status group address should be read at startup</description>
-                <required>false</required>
+                <required>true</required>
                 <default>false</default>
             </parameter>
             <parameter name="interval" type="integer">
@@ -79,7 +79,7 @@
                 <parameter name="read" type="boolean">
                 <label>Read</label>
                 <description>Flag to indicate if the energy group address should be read at startup</description>
-                <required>false</required>
+                <required>true</required>
                 <default>false</default>             
             </parameter>
             <parameter name="interval" type="integer">
@@ -104,7 +104,7 @@
             <parameter name="read" type="boolean">
                 <label>Read</label>
                 <description>Flag to indicate if the current group address should be read at startup</description>
-                <required>false</required>
+                <required>true</required>
                 <default>false</default>
             </parameter>
             <parameter name="interval" type="integer">
@@ -129,7 +129,7 @@
             <parameter name="read" type="boolean">
                 <label>Read</label>
                 <description>Flag to indicate if the operating hours group address should be read at startup</description>
-                <required>false</required>
+                <required>true</required>
                 <default>false</default>
             </parameter>
             <parameter name="interval" type="integer">
@@ -174,7 +174,7 @@
             <parameter name="read" type="boolean">
                 <label>Read</label>
                 <description>Flag to indicate if the status group addresses should be read at startup</description>
-                <required>false</required>
+                <required>true</required>
                 <default>false</default>
             </parameter>
             <parameter name="interval" type="integer">
@@ -224,7 +224,7 @@
             <parameter name="read" type="boolean">
                 <label>Read</label>
                 <description>Flag to indicate if the status group addresses should be read at startup</description>
-                <required>false</required>
+                <required>true</required>
                 <default>false</default>
             </parameter>
             <parameter name="interval" type="integer">
@@ -254,7 +254,7 @@
             <parameter name="read" type="boolean">
                 <label>Read</label>
                 <description>Flag to indicate if the status group address should be read at startup</description>
-                <required>false</required>
+                <required>true</required>
                 <default>false</default>
             </parameter>
             <parameter name="interval" type="integer">
@@ -284,7 +284,7 @@
             <parameter name="read" type="boolean">
                 <label>Read</label>
                 <description>Flag to indicate if the status group address should be read at startup</description>
-                <required>false</required>
+                <required>true</required>
                 <default>false</default>
             </parameter>
             <parameter name="interval" type="integer">
@@ -314,7 +314,7 @@
             <parameter name="read" type="boolean">
                 <label>Read</label>
                 <description>Flag to indicate if the status group address should be read at startup</description>
-                <required>false</required>
+                <required>true</required>
                 <default>false</default>
             </parameter>
             <parameter name="interval" type="integer">
@@ -344,7 +344,7 @@
             <parameter name="read" type="boolean">
                 <label>Read</label>
                 <description>Flag to indicate if the status group address should be read at startup</description>
-                <required>false</required>
+                <required>true</required>
                 <default>false</default>
             </parameter>
             <parameter name="interval" type="integer">
@@ -374,7 +374,7 @@
             <parameter name="read" type="boolean">
                 <label>Read</label>
                 <description>Flag to indicate if the status group address should be read at startup</description>
-                <required>false</required>
+                <required>true</required>
                 <default>false</default>
             </parameter>
             <parameter name="interval" type="integer">
@@ -404,7 +404,7 @@
             <parameter name="read" type="boolean">
                 <label>Read</label>
                 <description>Flag to indicate if the status group address should be read at startup</description>
-                <required>false</required>
+                <required>true</required>
                 <default>false</default>
             </parameter>
             <parameter name="interval" type="integer">
