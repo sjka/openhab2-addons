@@ -172,7 +172,6 @@ public class KNXGenericThingHandler extends BaseThingHandler
 
     @Override
     public void dispose() {
-
         if (pollingJob != null && !pollingJob.isCancelled()) {
             pollingJob.cancel(true);
             pollingJob = null;
@@ -181,6 +180,13 @@ public class KNXGenericThingHandler extends BaseThingHandler
         if (descriptionJob != null && !descriptionJob.isCancelled()) {
             descriptionJob.cancel(true);
             descriptionJob = null;
+        }
+
+        cancelReadFutures();
+
+        KNXBridgeBaseThingHandler bridgeHandler = (KNXBridgeBaseThingHandler) getBridge().getHandler();
+        if (bridgeHandler != null) {
+            bridgeHandler.unregisterGroupAddressListener(this);
         }
     }
 
@@ -287,19 +293,6 @@ public class KNXGenericThingHandler extends BaseThingHandler
     @Override
     public boolean listensTo(GroupAddress destination) {
         return groupAddresses.contains(destination) || foundGroupAddresses.contains(destination);
-    }
-
-    @Override
-    public void handleRemoval() {
-
-        cancelReadFutures();
-
-        KNXBridgeBaseThingHandler bridgeHandler = (KNXBridgeBaseThingHandler) getBridge().getHandler();
-        if (bridgeHandler != null) {
-            bridgeHandler.unregisterGroupAddressListener(this);
-        }
-
-        updateStatus(ThingStatus.REMOVED);
     }
 
     @Override
