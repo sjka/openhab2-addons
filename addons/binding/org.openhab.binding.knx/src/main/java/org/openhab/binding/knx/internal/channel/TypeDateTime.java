@@ -25,7 +25,6 @@ public class TypeDateTime extends KNXChannelType {
 
     @Override
     public String getDPT(GroupAddress groupAddress, Configuration configuration) {
-        // TODO : see TypeNumber
         return (String) configuration.get(DPT);
     }
 

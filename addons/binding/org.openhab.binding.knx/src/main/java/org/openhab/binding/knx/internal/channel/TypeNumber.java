@@ -25,19 +25,6 @@ public class TypeNumber extends KNXChannelType {
 
     @Override
     public String getDPT(GroupAddress groupAddress, Configuration configuration) {
-
-        // TODO : decide whether it is opportunistic to check the compatbility between the choosen DPT and
-        // the supposedly Number Item linked to this channel. The alternative would be to forego this
-        // check and let it up to the ThingManager to do this and log an error
-
-        // Class<?> classType = KNXCoreTypeMapper.toTypeClass((String) configuration.get(DPT));
-        // NumberItem someNumber = new NumberItem("");
-        // if (!someNumber.getAcceptedDataTypes().contains(classType)) {
-        // logger.warn("The DPT '{}' yields a '{}', which is not compatible with Number Items", (String)
-        // configuration.get(DPT),classType.getSimpleName());
-        // return null;
-        // }
-
         return (String) configuration.get(DPT);
     }
 
