@@ -40,6 +40,8 @@
     <module>org.openhab.binding.globalcache</module>
     <module>org.openhab.binding.ipp</module>
     <module>org.openhab.binding.keba</module>
+    <module>org.openhab.binding.knx</module>
+    <module>org.openhab.binding.knx.generic</module>
     <module>org.openhab.binding.kodi</module>
     <module>org.openhab.binding.kostalinverter</module>
     <module>org.openhab.binding.lgtvserial</module>
