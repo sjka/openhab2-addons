@@ -17,7 +17,7 @@ import org.eclipse.smarthome.core.types.Type;
 
 import tuwien.auto.calimero.GroupAddress;
 
-public class TypeStatusSwitch extends KNXChannelType {
+class TypeStatusSwitch extends KNXChannelType {
 
     TypeStatusSwitch() {
         super(CHANNEL_STATUSSWITCH);

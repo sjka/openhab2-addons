@@ -16,7 +16,7 @@ import org.eclipse.smarthome.config.core.Configuration;
 
 import tuwien.auto.calimero.GroupAddress;
 
-public class TypeOperatingHours extends KNXChannelType {
+class TypeOperatingHours extends KNXChannelType {
 
     TypeOperatingHours() {
         super(CHANNEL_OPERATING_HOURS);

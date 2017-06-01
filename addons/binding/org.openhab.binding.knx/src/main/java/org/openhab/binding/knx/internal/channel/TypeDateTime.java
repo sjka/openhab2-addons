@@ -17,7 +17,7 @@ import org.eclipse.smarthome.core.types.Type;
 
 import tuwien.auto.calimero.GroupAddress;
 
-public class TypeDateTime extends KNXChannelType {
+class TypeDateTime extends KNXChannelType {
 
     TypeDateTime() {
         super(CHANNEL_DATETIME);

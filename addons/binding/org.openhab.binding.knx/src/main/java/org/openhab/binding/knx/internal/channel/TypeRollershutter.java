@@ -23,7 +23,7 @@ import com.google.common.collect.Sets;
 import tuwien.auto.calimero.GroupAddress;
 import tuwien.auto.calimero.exception.KNXFormatException;
 
-public class TypeRollershutter extends KNXChannelType {
+class TypeRollershutter extends KNXChannelType {
 
     TypeRollershutter() {
         super(CHANNEL_ROLLERSHUTTER);

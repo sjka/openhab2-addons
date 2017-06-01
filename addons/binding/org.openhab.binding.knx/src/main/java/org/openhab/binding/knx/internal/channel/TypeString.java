@@ -17,7 +17,7 @@ import org.eclipse.smarthome.core.types.Type;
 
 import tuwien.auto.calimero.GroupAddress;
 
-public class TypeString extends KNXChannelType {
+class TypeString extends KNXChannelType {
 
     TypeString() {
         super(CHANNEL_STRING);

@@ -17,7 +17,7 @@ import org.eclipse.smarthome.core.types.Type;
 
 import tuwien.auto.calimero.GroupAddress;
 
-public class TypeWallButton extends KNXChannelType {
+class TypeWallButton extends KNXChannelType {
 
     TypeWallButton() {
         super(CHANNEL_WALLBUTTON);

@@ -22,7 +22,7 @@ import org.eclipse.smarthome.core.types.Type;
 import tuwien.auto.calimero.GroupAddress;
 import tuwien.auto.calimero.exception.KNXFormatException;
 
-public class TypeDimmer extends KNXChannelType {
+class TypeDimmer extends KNXChannelType {
 
     TypeDimmer() {
         super(CHANNEL_DIMMER);
