@@ -134,6 +134,7 @@ public class IndividualAddressDiscoveryService extends AbstractDiscoveryService 
                 scanNetwork(scannedNetworks, new AreaLine(area, line));
             }
         }
+        searchOngoing = false;
     }
 
     private void scanNetwork(Set<AreaLine> scannedNetworks, AreaLine al) {
@@ -155,19 +156,23 @@ public class IndividualAddressDiscoveryService extends AbstractDiscoveryService 
 
     private void processResults(IndividualAddress[] newAddresses) {
         if (newAddresses != null) {
-            for (int i = 0; i < newAddresses.length; i++) {
-                ThingUID bridgeUID = bridgeHandler.getThing().getUID();
-                ThingUID thingUID = new ThingUID(KNXGenericBindingConstants.THING_TYPE_GENERIC,
-                        newAddresses[i].toString().replace(".", "_"), bridgeUID.getId());
-
-                Map<String, Object> properties = new HashMap<>(1);
-                properties.put(ADDRESS, newAddresses[i].toString());
-                DiscoveryResult discoveryResult = DiscoveryResultBuilder.create(thingUID).withProperties(properties)
-                        .withBridge(bridgeUID).withLabel("Individual Address " + newAddresses[i].toString()).build();
-
-                thingDiscovered(discoveryResult);
+            for (IndividualAddress individualAddress : newAddresses) {
+                processResults(individualAddress);
             }
         }
+    }
+
+    private void processResults(IndividualAddress individualAddress) {
+        ThingUID bridgeUID = bridgeHandler.getThing().getUID();
+        ThingUID thingUID = new ThingUID(KNXGenericBindingConstants.THING_TYPE_GENERIC,
+                individualAddress.toString().replace(".", "_"), bridgeUID.getId());
+
+        Map<String, Object> properties = new HashMap<>(1);
+        properties.put(ADDRESS, individualAddress.toString());
+        DiscoveryResult discoveryResult = DiscoveryResultBuilder.create(thingUID).withProperties(properties)
+                .withBridge(bridgeUID).withLabel("Individual Address " + individualAddress.toString()).build();
+
+        thingDiscovered(discoveryResult);
     }
 
     @Override
@@ -179,6 +184,9 @@ public class IndividualAddressDiscoveryService extends AbstractDiscoveryService 
     public void onActivity(IndividualAddress source, GroupAddress destination, byte[] asdu) {
         if (source != null) {
             seenNetworks.add(new AreaLine(source.getArea(), source.getLine()));
+        }
+        if (isBackgroundDiscoveryEnabled() && !searchOngoing) {
+            processResults(source);
         }
     }
 
