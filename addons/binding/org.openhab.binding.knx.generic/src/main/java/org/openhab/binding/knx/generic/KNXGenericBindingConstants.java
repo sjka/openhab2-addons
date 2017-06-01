@@ -21,8 +21,6 @@ public class KNXGenericBindingConstants {
 
     // List of all Thing Type UIDs
     public static final ThingTypeUID THING_TYPE_GENERIC = new ThingTypeUID(KNXBindingConstants.BINDING_ID, "generic");
-    public static final ThingTypeUID THING_TYPE_PARSER = new ThingTypeUID(KNXBindingConstants.BINDING_ID, "parser");
-    public static final ThingTypeUID THING_TYPE_SCANNER = new ThingTypeUID(KNXBindingConstants.BINDING_ID, "scanner");
 
     public static final String CHANNEL_GENERIC = "generic";
 

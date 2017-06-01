@@ -16,4 +16,5 @@
    <service>
       <provide interface="org.eclipse.smarthome.core.thing.binding.ThingHandlerFactory"/>
    </service>
+   <reference bind="addBridgeHandlerTracker" cardinality="0..n" interface="org.openhab.binding.knx.KNXBridgeHandlerTracker" name="KNXBridgeHandlerTracker" policy="dynamic" unbind="removeBridgeHandlerTracker"/>
 </scr:component>

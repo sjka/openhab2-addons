@@ -25,7 +25,6 @@ import org.eclipse.smarthome.core.thing.ThingTypeUID;
 import org.eclipse.smarthome.core.thing.ThingUID;
 import org.openhab.binding.knx.KNXBusListener;
 import org.openhab.binding.knx.generic.KNXGenericBindingConstants;
-import org.openhab.binding.knx.generic.internal.handler.KNXScanHandler;
 import org.openhab.binding.knx.handler.KNXBridgeBaseThingHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,13 +49,13 @@ public class IndividualAddressDiscoveryService extends AbstractDiscoveryService 
     private static final int SEARCH_TIME = 600;
     private boolean searchOngoing = false;
 
-    private KNXScanHandler bridgeHandler;
+    private KNXBridgeBaseThingHandler bridgeHandler;
     protected Set<AreaLine> seenNetworks = new CopyOnWriteArraySet<>();
 
-    public IndividualAddressDiscoveryService(KNXScanHandler handler) throws IllegalArgumentException {
+    public IndividualAddressDiscoveryService(KNXBridgeBaseThingHandler handler) throws IllegalArgumentException {
         super(SUPPORTED_THING_TYPES_UIDS, SEARCH_TIME, false);
         this.bridgeHandler = handler;
-        bridgeHandler.getMainBridgeHandler().registerKNXBusListener(this);
+        bridgeHandler.registerKNXBusListener(this);
     }
 
     public class AreaLine {
@@ -115,7 +114,7 @@ public class IndividualAddressDiscoveryService extends AbstractDiscoveryService 
     @Override
     public void deactivate() {
         super.deactivate();
-        bridgeHandler.getMainBridgeHandler().unregisterKNXBusListener(this);
+        bridgeHandler.unregisterKNXBusListener(this);
     }
 
     @Override
@@ -145,7 +144,7 @@ public class IndividualAddressDiscoveryService extends AbstractDiscoveryService 
             return;
         }
 
-        IndividualAddress[] addresses = bridgeHandler.getMainBridgeHandler().scanNetworkDevices(al.area, al.line);
+        IndividualAddress[] addresses = bridgeHandler.scanNetworkDevices(al.area, al.line);
         processResults(addresses);
         scannedNetworks.add(al);
 

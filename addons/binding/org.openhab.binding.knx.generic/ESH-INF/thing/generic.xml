@@ -7,8 +7,8 @@
 	<!-- Generic KNX Actor -->
 	<thing-type id="generic">
 		<supported-bridge-type-refs>
-			<bridge-type-ref id="scan" />
-			<bridge-type-ref id="import" />
+            <bridge-type-ref id="ip" />
+            <bridge-type-ref id="serial" />
 		</supported-bridge-type-refs>
 
 		<label>Generic KNX actor</label>
