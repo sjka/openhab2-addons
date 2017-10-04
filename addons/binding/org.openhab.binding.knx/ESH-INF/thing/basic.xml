@@ -5,7 +5,7 @@
         xsi:schemaLocation="http://eclipse.org/smarthome/schemas/thing-description/v1.0.0 http://eclipse.org/smarthome/schemas/thing-description-1.0.0.xsd">
 
 	<!-- Generic KNX Actor -->
-	<thing-type id="basic">
+	<thing-type id="basic" extensible="statusswitch,wallbutton,dimmer,rollershutter,setpoint,number,string,datetime,contact,switch">
 		<supported-bridge-type-refs>
 			<bridge-type-ref id="ip" />
 			<bridge-type-ref id="serial" />
