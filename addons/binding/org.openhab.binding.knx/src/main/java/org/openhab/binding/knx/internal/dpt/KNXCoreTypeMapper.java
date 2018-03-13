@@ -759,16 +759,16 @@ public class KNXCoreTypeMapper implements KNXTypeMapper {
                 return null;
             }
 
+            logger.trace("value of DPT = '{}'", value);
             if (typeClass.equals(PercentType.class)) {
-                return PercentType.valueOf(value.split(" ")[0]);
+                return PercentType.valueOf(value.split(" ")[0].replace(",", "."));
             }
             if (typeClass.equals(DecimalType.class)) {
-                return DecimalType.valueOf(value.split(" ")[0]);
+                return DecimalType.valueOf(value.split(" ")[0].replace(",", "."));
             }
             if (typeClass.equals(StringType.class)) {
                 return StringType.valueOf(value);
             }
-
             if (typeClass.equals(DateTimeType.class)) {
                 String date = formatDateTime(value, datapoint.getDPT());
                 if ((date == null) || (date.isEmpty())) {
@@ -778,7 +778,6 @@ public class KNXCoreTypeMapper implements KNXTypeMapper {
                     return DateTimeType.valueOf(date);
                 }
             }
-
             if (typeClass.equals(HSBType.class)) {
                 // value has format of "r:<red value> g:<green value> b:<blue value>"
                 int r = Integer.parseInt(value.split(" ")[0].split(":")[1]);
